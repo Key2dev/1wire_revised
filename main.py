@@ -11,6 +11,10 @@ class MyGui:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("1Wire Reader")
+        
+        # Database Variables
+        self.db_path = "temperatury.db"
+        self.table_name = "temps"
 
         # Data Variables
         self.data_time = ""
@@ -73,7 +77,7 @@ class MyGui:
 
     def update_all(self):
         self.update_variables()  # Updates the actual data
-        db_functions.insert_data_to_db("temperatury.db", "temps", self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)  # Insert data into DB
+        db_functions.insert_data_to_db(self.db_path, self.table_name, self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)  # Insert data into DB
         self.update_labels()      # Updates the displayable labels in the UI
         self.update_graph()       # Updates the graph with new data
         self.root.after(1000, self.update_all)  # Update every second
@@ -121,7 +125,7 @@ class MyGui:
     def export_db(self):
         print("Export DataBase to csv file")
         # DB dump to csv file
-        db_functions.export_to_csv("temperatury.db", "temps", "test_dbdump.csv")
+        db_functions.export_to_csv(self.db_path, self.table_name, "test_dbdump.csv")
         
     def open_submenu(self):
         # Implement a submenu for filtering data

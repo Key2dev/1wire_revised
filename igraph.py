@@ -27,7 +27,7 @@ class InteractiveTemperaturePlot:
         self.plot_frame.pack(fill=tk.BOTH, expand=1)
 
         # Fetch and prepare data
-        self.dataset = db_functions.fetch_filtered_data(db_path, table_name, start_time, end_time)
+        self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
         self.temperatures = [row[2] + 1 for row in self.dataset]
         self.temperatures2 = [row[3] + 3 for row in self.dataset]
@@ -356,21 +356,23 @@ class InteractiveTemperaturePlot:
         print("Exporting data...")
         #TODO: actually implement this
         
-def main():
-    root = tk.Tk()
-    root.title("Main Application Window")
+        
+# TODO: this is for debugging, remove later
+# def main():
+#     root = tk.Tk()
+#     root.title("Main Application Window")
 
-    # Example button to launch the subwindow
-    def open_plot_window():
-        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-11-26 11:55:00")
+#     # Example button to launch the subwindow
+#     def open_plot_window():
+#         InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-11-26 11:55:00")
 
-    open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
-    open_button.pack(padx=20, pady=20)
+#     open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
+#     open_button.pack(padx=20, pady=20)
 
-    root.mainloop()
+#     root.mainloop()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
     
     
     
