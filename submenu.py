@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog  # Import filedialog for saving functionality
 from tkcalendar import DateEntry
 import db_functions
+from igraph import InteractiveTemperaturePlot
+import datetime
 
 
 class Submenu:
@@ -59,21 +61,31 @@ class Submenu:
         end_time = f"{self.hour_spinbox.get()}:{self.minute_spinbox.get()}"
         print(f"Start: {start_date} {start_time}")
         print(f"End: {end_date} {end_time}")
-        
+
         # Conversion to proper date format
         start_date = start_date.split("/")
         start_date = f"20{start_date[2]}-{start_date[0]}-{start_date[1]}"
         end_date = end_date.split("/")
         end_date = f"20{end_date[2]}-{end_date[0]}-{end_date[1]}"
         print(start_date, end_date)
-        
+
         # Combine date and time into a tuple
         date_tuple = (f"{start_date} {start_time}:00", f"{end_date} {end_time}:00")
         print(date_tuple)
         return date_tuple
+
     def generate_graph(self):
-        pass
-        #TODO: This
+        # Fetch dates from UI
+        start_date, end_date = self.get_date_and_time()
+        print(f"Generating graph for dates: {start_date} to {end_date}")
+    
+        # Parse the date strings to datetime objects
+        start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+        end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+    
+        # Open the graph window and pass the fetched data
+        InteractiveTemperaturePlot(self.window, "temperatury.db", "temps", start_date, end_date)
+
 
     def open_save_dialog(self):
         file_path = filedialog.asksaveasfilename(title="Save File", defaultextension=".csv",
@@ -81,7 +93,7 @@ class Submenu:
         if file_path:
             print(file_path)
             return file_path 
-                
+
     def saving_filtered(self):
         start_date, end_date = self.get_date_and_time()
         file_path = self.open_save_dialog()
@@ -90,6 +102,6 @@ class Submenu:
             print("Filtered data saved to file.")
         else:
             print("No file path selected.")
-                
+
     def close_window(self):
         self.window.destroy()
