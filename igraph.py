@@ -6,6 +6,8 @@ import tkinter as tk
 from tkinter import ttk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import tkinter.simpledialog
+import numpy as np
+from matplotlib.lines import Line2D
 
 class InteractiveTemperaturePlot:
     def __init__(self, parent, db_path, table_name, start_time, end_time):
@@ -142,9 +144,9 @@ class InteractiveTemperaturePlot:
 
 
     def init_plot(self):
-        self.scatter1 = self.ax.scatter(self.timestamps, self.temperatures, c='blue', picker=True, label="Temp 1")
-        self.scatter2 = self.ax.scatter(self.timestamps, self.temperatures2, c='red', picker=True, label="Temp 2")
-        self.scatter3 = self.ax.scatter(self.timestamps, self.temperatures3, c='green', picker=True, label="Temp 3")
+        self.line1, = self.ax.plot(self.timestamps, self.temperatures, c='blue', label="Temp 1", marker='o', linestyle='-', picker=5, markersize=4)
+        self.line2, = self.ax.plot(self.timestamps, self.temperatures2, c='red', label="Temp 2", marker='o', linestyle='-', picker=5, markersize=4)
+        self.line3, = self.ax.plot(self.timestamps, self.temperatures3, c='green', label="Temp 3", marker='o', linestyle='-', picker=5, markersize=4)
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature")
@@ -161,8 +163,15 @@ class InteractiveTemperaturePlot:
         # Initialize comment annotations (hidden by default)
         self.comment_annotations = []
 
+        # Create scatter plots for selected points (initially empty)
+        self.selected_scatter1 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp1")
+        self.selected_scatter2 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp2")
+        self.selected_scatter3 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp3")
+
+
     def init_pick_event(self):
         self.fig.canvas.mpl_connect('pick_event', self.onpick)
+
         
     def init_hover_event(self):
         self.hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.on_hover)
@@ -171,34 +180,24 @@ class InteractiveTemperaturePlot:
     # On click function for picking data from graph
     def highlight_graph_point(self, index):
         """Highlight only the selected points for a specific timestamp."""
-        # Clear previous highlights
-        for collection in self.ax.collections:
-            collection.remove()
-    
-        # Redraw the base plot
-        self.init_plot()
-    
-        # Highlight the selected points
-        #TODO: Edit legend to show temps in labels instead
-        self.ax.scatter(self.timestamps[index], self.temperatures[index], c='yellow', s=100, zorder=5, label="Selected Temp1")
-        self.ax.scatter(self.timestamps[index], self.temperatures2[index], c='yellow', s=100, zorder=5, label="Selected Temp2")
-        self.ax.scatter(self.timestamps[index], self.temperatures3[index], c='yellow', s=100, zorder=5, label="Selected Temp3")
-    
-        # Prevent duplicate legend entries
-        handles, labels = self.ax.get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        self.ax.legend(by_label.values(), by_label.keys())
-    
+        # Update scatter plots for selected points
+        self.selected_scatter1.set_offsets(np.array([[self.timestamps[index], self.temperatures[index]]]))
+        self.selected_scatter2.set_offsets(np.array([[self.timestamps[index], self.temperatures2[index]]]))
+        self.selected_scatter3.set_offsets(np.array([[self.timestamps[index], self.temperatures3[index]]]))
+
         # Update the canvas to show the changes
         self.canvas.draw_idle()
 
     def onpick(self, event):
-        """Handle pick events when clicking on a point in the plot."""
-        artist = event.artist
-        if hasattr(artist, "get_offsets"):
+        if isinstance(event.artist, Line2D):
+            thisline = event.artist
+            xdata = thisline.get_xdata()
+            ydata = thisline.get_ydata()
             ind = event.ind
-            if ind:  # If there is a valid index
+            if len(ind) > 0:
                 i = ind[0]
+                x = xdata[i]
+                y = ydata[i]
                 self.highlight_graph_point(i)
 
                 # Get the timestamp of the selected point
@@ -215,6 +214,18 @@ class InteractiveTemperaturePlot:
                         self.data_table.yview_moveto(self.data_table.index(item) / len(self.data_table.get_children()))
                         break
 
+                # Update the annotation
+                self.annotation.xy = (x, y)
+                text = f"Time: {selected_timestamp}\n"
+                text += f"Temp 1: {self.temperatures[i]:.2f}\n"
+                text += f"Temp 2: {self.temperatures2[i]:.2f}\n"
+                text += f"Temp 3: {self.temperatures3[i]:.2f}\n"
+                if self.comments[i]:
+                    text += f"Comment: {self.comments[i]}"
+                self.annotation.set_text(text)
+                self.annotation.set_visible(True)
+                self.fig.canvas.draw_idle()
+
 
     def on_table_select(self, event):
         selected_item = self.data_table.selection()
@@ -228,11 +239,13 @@ class InteractiveTemperaturePlot:
     # Setting up on hover
     def on_hover(self, event):
         if event.inaxes == self.ax:
-            for scatter in [self.scatter1, self.scatter2, self.scatter3]:
-                cont, ind = scatter.contains(event)
+            for line, temps in [(self.line1, self.temperatures),
+                                (self.line2, self.temperatures2),
+                                (self.line3, self.temperatures3)]:
+                cont, ind = line.contains(event)
                 if cont:
-                    i = ind['ind'][0]
-                    x, y = self.timestamps[i], event.ydata
+                    i = ind["ind"][0]  # Get the index of the nearest point
+                    x, y = self.timestamps[i], temps[i]
                     self.annotation.xy = (x, y)
                     text = f"Time: {self.timestamps[i].strftime('%Y-%m-%d %H:%M:%S')}\n"
                     text += f"Temp 1: {self.temperatures[i]:.2f}\n"
@@ -243,7 +256,6 @@ class InteractiveTemperaturePlot:
                     self.annotation.set_text(text)
                     self.annotation.set_visible(True)
                     self.fig.canvas.draw_idle()
-                    print(f"Hover event triggered for point {i}")  # Debug print
                     return
 
             # If no point is found, hide the annotation
@@ -253,8 +265,13 @@ class InteractiveTemperaturePlot:
             self.annotation.set_visible(False)
             self.fig.canvas.draw_idle()
 
-        print("Hover event processed")  # Debug print
 
+    def find_nearest_point(self, x, y, line):
+        xdata = mdates.date2num(self.timestamps)
+        ydata = line.get_ydata()
+        distances = np.sqrt((xdata - x)**2 + (ydata - y)**2)
+        return np.argmin(distances)
+    
     # Comment checkbox logic
     def toggle_comments(self):
         show_comments = self.show_comments_var.get()
@@ -358,21 +375,21 @@ class InteractiveTemperaturePlot:
         
         
 # TODO: this is for debugging, remove later
-# def main():
-#     root = tk.Tk()
-#     root.title("Main Application Window")
+def main():
+    root = tk.Tk()
+    root.title("Main Application Window")
 
-#     # Example button to launch the subwindow
-#     def open_plot_window():
-#         InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-11-26 11:55:00")
+    # Example button to launch the subwindow
+    def open_plot_window():
+        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-12-4 11:55:00")
 
-#     open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
-#     open_button.pack(padx=20, pady=20)
+    open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
+    open_button.pack(padx=20, pady=20)
 
-#     root.mainloop()
+    root.mainloop()
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
     
     
     
