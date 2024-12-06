@@ -61,7 +61,7 @@ class InteractiveTemperaturePlot:
         self.control_frame.pack(fill=tk.BOTH, expand=0.6)
 
         # Add Action Buttons
-        self.button1 = tk.Button(self.control_frame, text="Export DB", font=('Arial', '12'), command=self.button1_function)
+        self.button1 = tk.Button(self.control_frame, text="Export DB", font=('Arial', '12'), command=self.export_data)
         self.button1.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Add checkbox for showing comments
@@ -369,11 +369,10 @@ class InteractiveTemperaturePlot:
         self.igraph.destroy()
 
     # Button functions
-    def button1_function(self):
+    def export_data(self):
         # TODO: add some functionality to determine filepath
         print("Exporting data...")
-        default_name = f"1wire_{self.start_time.strftime('%Y-%m-%d')}_to_{self.end_time.strftime('%Y-%m-%d')}.csv"
-        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, export_path=default_name)
+        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time)
         
         
 # TODO: this is for debugging, remove later

@@ -49,7 +49,7 @@ class Submenu:
         button_frame = tk.Frame(main_frame, pady=10)
         button_frame.pack()
         tk.Button(button_frame, text="Get Date and Time", command=self.get_date_and_time).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Save filtered", command=self.saving_filtered).pack(side="left", padx=5)
+        tk.Button(button_frame, text="Save filtered", command=self.save_filtered_to_csv).pack(side="left", padx=5)
         tk.Button(button_frame, text="Generate graph", command=self.generate_graph).pack(side="left", padx=5)
         tk.Button(button_frame, text="Exit", command=self.close_window).pack(side="left", padx=5)
 
@@ -86,22 +86,9 @@ class Submenu:
         # Open the graph window and pass the fetched data
         InteractiveTemperaturePlot(self.window, "temperatury.db", "temps", start_date, end_date)
 
-
-    def open_save_dialog(self):
-        file_path = filedialog.asksaveasfilename(title="Save File", defaultextension=".csv",
-                                                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")])
-        if file_path:
-            print(file_path)
-            return file_path 
-
-    def saving_filtered(self):
+    def save_filtered_to_csv(self):
         start_date, end_date = self.get_date_and_time()
-        file_path = self.open_save_dialog()
-        if file_path:
-            db_functions.records_by_time_csv("temperatury.db", "temps", start_date, end_date, file_path)
-            print("Filtered data saved to file.")
-        else:
-            print("No file path selected.")
+        db_functions.records_by_time_csv("temperatury.db", "temps", start_date, end_date)
 
     def close_window(self):
         self.window.destroy()
