@@ -370,8 +370,10 @@ class InteractiveTemperaturePlot:
 
     # Button functions
     def button1_function(self):
+        # TODO: add some functionality to determine filepath
         print("Exporting data...")
-        #TODO: actually implement this
+        default_name = f"1wire_{self.start_time.strftime('%Y-%m-%d')}_to_{self.end_time.strftime('%Y-%m-%d')}.csv"
+        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, export_path=default_name)
         
         
 # TODO: this is for debugging, remove later
