@@ -155,3 +155,28 @@ def add_comment(database_name, table_name, timestamp:str, comment:str):
         
     except Exception as e:
         print(f"An error occurred while updating comment: {e}")
+        
+def create_db(database_name:str, table_name:str):
+    try:
+        # Connect to the database
+        conn = sqlite3.connect(database_name)
+        cursor = conn.cursor()
+        
+        # Create the table if it doesn't exist
+        query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data TEXT NOT NULL,
+            T1 REAL NOT NULL,
+            T2 REAL NOT NULL,
+            T3 REAL NOT NULL,
+            comment TEXT DEFAULT ''
+        );
+        """
+        cursor.execute(query)
+        conn.commit()
+        print("Table created successfully.")
+        conn.close()
+    
+    except Exception as e:
+        print(f"An error occurred while creating table: {e}")
