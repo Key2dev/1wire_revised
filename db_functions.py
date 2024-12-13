@@ -180,3 +180,15 @@ def create_db(database_name:str, table_name:str):
     
     except Exception as e:
         print(f"An error occurred while creating table: {e}")
+        
+def get_date_range(database_name: str, table_name: str):
+    conn = sqlite3.connect(database_name)
+    cursor = conn.cursor()
+    query = f"SELECT MIN(data), MAX(data) FROM {table_name}"
+    cursor.execute(query)
+    min_date, max_date = cursor.fetchone()
+    min_date = min_date.split('.')[0]
+    max_date = max_date.split('.')[0]
+    conn.close()
+    print(f"Data range: {min_date} to {max_date}")
+    return min_date, max_date
