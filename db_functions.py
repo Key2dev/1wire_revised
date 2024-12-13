@@ -166,11 +166,11 @@ def create_db(database_name:str, table_name:str):
         query = f"""
         CREATE TABLE IF NOT EXISTS {table_name} (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            data TEXT NOT NULL,
-            T1 REAL NOT NULL,
-            T2 REAL NOT NULL,
-            T3 REAL NOT NULL,
-            comment TEXT DEFAULT ''
+            data DATETIME DEFAULT CURRENT_TIMESTAMP,
+            T1 FLOAT(10,2),
+            T2 FLOAT(10,2),
+            T3 FLOAT(10,2),
+            comment VARCHAR(250) DEFAULT '';
         );
         """
         cursor.execute(query)
