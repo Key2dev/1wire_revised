@@ -7,11 +7,15 @@ import datetime
 
 
 class Submenu:
-    def __init__(self, parent, title="Submenu"):
+    def __init__(self, parent, db_path, table_name, title="Submenu"):  # Added db_path and table_name as parameters to the constructor.
         # Create a new Toplevel window
         self.window = tk.Toplevel(parent)
         self.window.title(title)
         self.window.geometry("400x400")  # Reduced size for a more compact layout
+
+        # Create a database connection
+        self.db_path = db_path
+        self.table_name = table_name
 
         # Create a main frame for all contents
         main_frame = tk.Frame(self.window, padx=10, pady=10)
@@ -84,11 +88,11 @@ class Submenu:
         end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
     
         # Open the graph window and pass the fetched data
-        InteractiveTemperaturePlot(self.window, "temperatury.db", "temps", start_date, end_date)
+        InteractiveTemperaturePlot(self.window, self.db_path, self.table_name, start_date, end_date)
 
     def save_filtered_to_csv(self):
         start_date, end_date = self.get_date_and_time()
-        db_functions.records_by_time_csv("temperatury.db", "temps", start_date, end_date)
+        db_functions.records_by_time_csv(self.db_path, self.table_name , start_date, end_date)
 
     def close_window(self):
         self.window.destroy()

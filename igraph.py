@@ -365,7 +365,6 @@ class InteractiveTemperaturePlot:
         
         
     def close_window(self):
-        self.igraph.quit()
         self.igraph.destroy()
 
     # Button functions

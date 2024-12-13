@@ -7,8 +7,16 @@ import db_functions
 import datetime
 from submenu import Submenu
 
+# Old reader implementation
+from wire_reader import read_1wire_sensors
+
 class MyGui:
     def __init__(self):
+        
+        #TODO: debug variables
+        self.usedebug = True
+        
+        # Create a new Toplevel window
         self.root = tk.Tk()
         self.root.title("1Wire Reader")
         
@@ -87,10 +95,19 @@ class MyGui:
         self.data_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         # Sensor Data Variables
-        self.data_temp1 = debugf.random_temp()
-        self.data_temp2 = debugf.random_temp()
-        self.data_temp3 = debugf.random_temp()
-
+        # TODO: delete this line and fix the next lines when actual sensor data reading is implemented
+        if self.usedebug:
+            # Using debug_functions to generate random temperatures for testing purposes
+            self.data_temp1 = debugf.random_temp()
+            self.data_temp2 = debugf.random_temp()
+            self.data_temp3 = debugf.random_temp()
+        else:
+            # Using actual sensor data reading here
+            temps = read_1wire_sensors()
+            self.data_temp1 = temps[0]
+            self.data_temp2 = temps[1]
+            self.data_temp3 = temps[2]
+        
         # Store historical data (just append new temperatures)
         self.temps1.append(self.data_temp1)
         self.temps2.append(self.data_temp2)
@@ -132,7 +149,7 @@ class MyGui:
         # Implement a submenu for filtering data
         print("Opening Filter Submenu")
         
-        Submenu(self.root)
+        Submenu(self.root, self.db_path, self.table_name)
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")

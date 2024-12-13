@@ -26,4 +26,4 @@ def read_1wire_sensor(sensor):
 def read_1wire_sensors():
     temp_sensors = find_temp_sensors()
     temps = [read_1wire_sensor(sensor) for sensor in temp_sensors]
-    return temps
+    return temps if temps else 'No temperature sensors found' # Return message if no sensors found for debugging
