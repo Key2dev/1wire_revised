@@ -10,16 +10,44 @@ from submenu import Submenu
 # Old reader implementation
 from wire_reader import read_1wire_sensors
 
-class MyGui:
+class WireReaderApp:
     def __init__(self):
-        
+        """
+        Initialize the WireReaderApp.
+
+        This method sets up the main window, initializes variables for data storage and display,
+        creates UI elements including labels and buttons, and sets up a live graph for temperature visualization.
+
+        Attributes:
+            usedebug (bool): Flag to enable debug mode.
+            root (tk.Tk): The main Tkinter window.
+            db_path (str): Path to the SQLite database file.
+            table_name (str): Name of the table in the database.
+            data_time (str): Current timestamp.
+            data_temp1 (float): Temperature reading from sensor 1.
+            data_temp2 (float): Temperature reading from sensor 2.
+            data_temp3 (float): Temperature reading from sensor 3.
+            temps1 (deque): Circular buffer for storing historical temperature data from sensor 1.
+            temps2 (deque): Circular buffer for storing historical temperature data from sensor 2.
+            temps3 (deque): Circular buffer for storing historical temperature data from sensor 3.
+            time_now (tk.StringVar): StringVar for displaying current time in UI.
+            temp1 (tk.StringVar): StringVar for displaying temperature 1 in UI.
+            temp2 (tk.StringVar): StringVar for displaying temperature 2 in UI.
+            temp3 (tk.StringVar): StringVar for displaying temperature 3 in UI.
+            fig (matplotlib.figure.Figure): Matplotlib figure for the live graph.
+            ax (matplotlib.axes.Axes): Axes for the live graph.
+            canvas (FigureCanvasTkAgg): Tkinter canvas for embedding the Matplotlib figure.
+
+        Returns:
+            None
+        """
         #TODO: debug variables
         self.usedebug = True
-        
+
         # Create a new Toplevel window
         self.root = tk.Tk()
         self.root.title("1Wire Reader")
-        
+
         # Database Variables
         self.db_path = "temperatury.db"
         self.table_name = "temps"
@@ -60,7 +88,7 @@ class MyGui:
 
         self.button2 = tk.Button(self.root, text="  Exit  ", font=('Arial', '12'), command=self.exit_click)
         self.button2.pack(padx=10, pady=10)
-        
+
         self.button3 = tk.Button(self.root, text="Filter", font=('Arial', '12'), command=self.open_submenu)
         self.button3.pack(padx=10, pady=10)
 
@@ -82,6 +110,7 @@ class MyGui:
 
         # Start updating the GUI
         self.update_all()
+
 
     def update_all(self):
         self.update_variables()  # Updates the actual data
@@ -161,7 +190,7 @@ class MyGui:
         self.root.mainloop()
 
 def main():
-    app = MyGui()
+    app = WireReaderApp()
     app.run()
 
 if __name__ == "__main__":

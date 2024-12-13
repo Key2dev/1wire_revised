@@ -119,7 +119,7 @@ class Submenu:
 
 
         # Validate the date range
-        # TODO: BUGGY
+        # TODO: BUGGY!!
         if start_date < self.min_date:
             messagebox.showwarning("Invalid Date Range", f"Start date cannot be earlier than {self.min_date.strftime('%Y-%m-%d %H:%M:%S')}")
             return
