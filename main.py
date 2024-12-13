@@ -123,6 +123,7 @@ class MyGui:
         self.canvas.draw()
 
     def export_db(self):
+        # TODO: this is dumping the while data to a csv file ?remove?
         print("Export DataBase to csv file")
         # DB dump to csv file
         db_functions.export_to_csv(self.db_path, self.table_name, "test_dbdump.csv")

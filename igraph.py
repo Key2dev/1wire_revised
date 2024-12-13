@@ -370,7 +370,7 @@ class InteractiveTemperaturePlot:
 
     # Button functions
     def export_data(self):
-        # TODO: add some functionality to determine filepath
+        # TODO: add some functionality to determine filepath - done in db_functions.py
         print("Exporting data...")
         db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time)
         
