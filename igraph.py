@@ -381,7 +381,7 @@ def main():
 
     # Example button to launch the subwindow
     def open_plot_window():
-        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-12-4 11:55:00")
+        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-12-04 11:55:00")
 
     open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
     open_button.pack(padx=20, pady=20)
