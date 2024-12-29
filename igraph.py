@@ -31,9 +31,9 @@ class InteractiveTemperaturePlot:
         # Fetch and prepare data
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] + 1 for row in self.dataset]
-        self.temperatures2 = [row[3] + 3 for row in self.dataset]
-        self.temperatures3 = [row[4] + 5 for row in self.dataset]
+        self.temperatures = [row[2] for row in self.dataset]
+        self.temperatures2 = [row[3] for row in self.dataset]
+        self.temperatures3 = [row[4] for row in self.dataset]
         self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
 
         # Initialize the plot
