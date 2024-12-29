@@ -31,9 +31,9 @@ class InteractiveTemperaturePlot:
         # Fetch and prepare data
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] + 1 for row in self.dataset]
-        self.temperatures2 = [row[3] + 3 for row in self.dataset]
-        self.temperatures3 = [row[4] + 5 for row in self.dataset]
+        self.temperatures = [row[2] for row in self.dataset]
+        self.temperatures2 = [row[3] for row in self.dataset]
+        self.temperatures3 = [row[4] for row in self.dataset]
         self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
 
         # Initialize the plot
@@ -61,7 +61,7 @@ class InteractiveTemperaturePlot:
         self.control_frame.pack(fill=tk.BOTH, expand=0.6)
 
         # Add Action Buttons
-        self.button1 = tk.Button(self.control_frame, text="Export DB", font=('Arial', '12'), command=self.button1_function)
+        self.button1 = tk.Button(self.control_frame, text="Export DB", font=('Arial', '12'), command=self.export_data)
         self.button1.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Add checkbox for showing comments
@@ -365,13 +365,13 @@ class InteractiveTemperaturePlot:
         
         
     def close_window(self):
-        self.igraph.quit()
         self.igraph.destroy()
 
     # Button functions
-    def button1_function(self):
+    def export_data(self):
+        # TODO: add some functionality to determine filepath - done in db_functions.py
         print("Exporting data...")
-        #TODO: actually implement this
+        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time)
         
         
 # TODO: this is for debugging, remove later
@@ -381,7 +381,7 @@ def main():
 
     # Example button to launch the subwindow
     def open_plot_window():
-        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-12-4 11:55:00")
+        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-12-04 11:55:00")
 
     open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
     open_button.pack(padx=20, pady=20)

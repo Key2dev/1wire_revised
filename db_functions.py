@@ -1,5 +1,8 @@
 import sqlite3
 import csv
+import os
+from tkinter import filedialog
+import tkinter as tk
 
 def export_to_csv(database_name:str, table_name:str, output_name:str):
     # Convert database to CSV format.
@@ -56,9 +59,24 @@ def fetch_last_n_records(database, table_name, n):
     
     return records
     
-
-def records_by_time_csv(database_name, table_name, start_date, end_date, output_name):
+def records_by_time_csv(database_name, table_name, start_date, end_date):
     try:
+        # Create a root window and hide it
+        root = tk.Tk()
+        root.withdraw()
+
+        # Open file dialog to choose save path and filename
+        output_name = filedialog.asksaveasfilename(
+            initialfile= f"1wire_{start_date}_{end_date}.csv",
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="Save CSV file as"
+        )
+
+        # If user cancels the file dialog, exit the function
+        if not output_name:
+            print("Export cancelled.")
+            return
         # Connect to the database
         conn = sqlite3.connect(database_name)
         cursor = conn.cursor()
@@ -89,9 +107,10 @@ def records_by_time_csv(database_name, table_name, start_date, end_date, output_
         # Close the database connection
         conn.close()
 
-        print("Export complete!")
+        print(f"Export complete! File saved as: {output_name}")
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 def fetch_filtered_data(database_name, table_name, start_date, end_date):
     try:
@@ -109,6 +128,7 @@ def fetch_filtered_data(database_name, table_name, start_date, end_date):
         cursor.execute(query, (start_date, end_date))
 
         # Fetch column names and rows
+        # TODO: This is not used in the application
         column_names = [description[0] for description in cursor.description]
         rows = cursor.fetchall()
         return rows
@@ -135,3 +155,40 @@ def add_comment(database_name, table_name, timestamp:str, comment:str):
         
     except Exception as e:
         print(f"An error occurred while updating comment: {e}")
+        
+def create_db(database_name:str, table_name:str):
+    try:
+        # Connect to the database
+        conn = sqlite3.connect(database_name)
+        cursor = conn.cursor()
+        
+        # Create the table if it doesn't exist
+        query = f"""
+        CREATE TABLE IF NOT EXISTS {table_name} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            data DATETIME DEFAULT CURRENT_TIMESTAMP,
+            T1 FLOAT(10,2),
+            T2 FLOAT(10,2),
+            T3 FLOAT(10,2),
+            comment VARCHAR(250) DEFAULT '';
+        );
+        """
+        cursor.execute(query)
+        conn.commit()
+        print("Table created successfully.")
+        conn.close()
+    
+    except Exception as e:
+        print(f"An error occurred while creating table: {e}")
+        
+def get_date_range(database_name: str, table_name: str):
+    conn = sqlite3.connect(database_name)
+    cursor = conn.cursor()
+    query = f"SELECT MIN(data), MAX(data) FROM {table_name}"
+    cursor.execute(query)
+    min_date, max_date = cursor.fetchone()
+    min_date = min_date.split('.')[0]
+    max_date = max_date.split('.')[0]
+    conn.close()
+    print(f"Data range: {min_date} to {max_date}")
+    return min_date, max_date
