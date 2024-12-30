@@ -10,12 +10,17 @@ from submenu import Submenu
 # Old reader implementation
 from wire_reader import read_1wire_sensors
 
-# TODO:
-"""
-    datetime unification %Y-%M-%D %H:%M:%S
-    backup bazy danych w innych miejscach
-    refresh na 5s
-    """
+# # TODO:
+#     datetime unification %Y-%M-%D %H:%M:%S
+#     backup bazy danych w innych miejscach
+#     refresh na 5s
+#     delete unused buttons/methods
+#     fix graph display (title, labels, etc.)
+#     implement configuration options
+#     make documentation
+#     fix spinbox year-ahead defaults
+#     fix live graph labels
+
 
 class WireReaderApp:
     def __init__(self):
