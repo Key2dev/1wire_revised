@@ -13,18 +13,18 @@ class InteractiveTemperaturePlot:
     def __init__(self, parent, db_path, table_name, start_time, end_time):
         self.igraph = tk.Toplevel(parent)
         self.igraph.title("Interactive Temperature Plot")
-        self.igraph.geometry("1200x800")  # Increased window size to accommodate table
+        self.igraph.geometry("1200x800")
 
         self.db_path = db_path
         self.table_name = table_name
         self.start_time = start_time
         self.end_time = end_time
 
-        # Main frame to organize plot and table
+        # Create main frame
         self.main_frame = tk.Frame(self.igraph)
         self.main_frame.pack(fill=tk.BOTH, expand=1)
 
-        # Frame for plot
+        # Create plot frame
         self.plot_frame = tk.Frame(self.main_frame)
         self.plot_frame.pack(fill=tk.BOTH, expand=1)
 
@@ -36,19 +36,25 @@ class InteractiveTemperaturePlot:
         self.temperatures3 = [row[4] for row in self.dataset]
         self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
 
+        # Initialize checkbox variables
+        self.temp1_var = tk.BooleanVar(value=True)
+        self.temp2_var = tk.BooleanVar(value=True)
+        self.temp3_var = tk.BooleanVar(value=True)
+        self.show_comments_var = tk.BooleanVar()
+
         # Initialize the plot
         self.fig, self.ax = plt.subplots(figsize=(10, 4))
         self.init_plot()
-        self.init_pick_event()
 
         # Embed the plot in the Tkinter window
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
         self.canvas.draw()
 
-        # Annotation on hover
-        self.init_annotation()
+        # Now we can call update_plot_limits
+        self.update_plot_limits()
 
-        # Connect the hover event
+        self.init_pick_event()
+        self.init_annotation()
         self.init_hover_event()
 
         # Add the matplotlib toolbar
@@ -56,6 +62,13 @@ class InteractiveTemperaturePlot:
         self.toolbar.update()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+        # Create control frame and add controls
+        self.create_control_frame()
+
+        # Create Treeview for data table
+        self.create_data_table()
+
+    def create_control_frame(self):
         # Frame for buttons and controls
         self.control_frame = tk.Frame(self.main_frame)
         self.control_frame.pack(fill=tk.BOTH, expand=0.6)
@@ -65,11 +78,26 @@ class InteractiveTemperaturePlot:
         self.button1.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Add checkbox for showing comments
-        self.show_comments_var = tk.BooleanVar()
         self.show_comments_checkbox = tk.Checkbutton(self.control_frame, text="Show Comments", 
                                                      variable=self.show_comments_var, 
                                                      command=self.toggle_comments)
         self.show_comments_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        # Add checkboxes for showing/hiding temperature lines
+        self.temp1_checkbox = tk.Checkbutton(self.control_frame, text="Show Temp 1", 
+                                             variable=self.temp1_var, 
+                                             command=self.toggle_temp_lines)
+        self.temp1_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.temp2_checkbox = tk.Checkbutton(self.control_frame, text="Show Temp 2", 
+                                             variable=self.temp2_var, 
+                                             command=self.toggle_temp_lines)
+        self.temp2_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.temp3_checkbox = tk.Checkbutton(self.control_frame, text="Show Temp 3", 
+                                             variable=self.temp3_var, 
+                                             command=self.toggle_temp_lines)
+        self.temp3_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Add button to update comments
         self.update_comment_button = tk.Button(self.control_frame, text="Update Comment", font=('Arial', '12'), command=self.update_comment)
@@ -78,8 +106,6 @@ class InteractiveTemperaturePlot:
         self.exitbutton = tk.Button(self.control_frame, text="Exit", font=('Arial', '12'), command=self.close_window)
         self.exitbutton.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        # Create Treeview for data table
-        self.create_data_table()
         
     def init_annotation(self):
         self.annotation = self.ax.annotate(
@@ -280,7 +306,22 @@ class InteractiveTemperaturePlot:
         else:
             self.remove_comments()
         self.fig.canvas.draw_idle()
-
+        
+    def toggle_temp_lines(self):
+        self.line1.set_visible(self.temp1_var.get())
+        self.line2.set_visible(self.temp2_var.get())
+        self.line3.set_visible(self.temp3_var.get())
+        self.update_plot_limits()
+        self.canvas.draw()
+    def update_plot_limits(self):
+        visible_lines = [line for line in [self.line1, self.line2, self.line3] if line.get_visible()]
+        if visible_lines:
+            ymin = min(min(line.get_ydata()) for line in visible_lines)
+            ymax = max(max(line.get_ydata()) for line in visible_lines)
+            self.ax.set_ylim(max(0, ymin - 5), min(50, ymax + 5))
+        else:
+            self.ax.set_ylim(0, 50)  # Default range if no data is visible
+        self.canvas.draw()
     def display_comments(self):
         print("Displaying comments...")  # Debug print
         self.remove_comments()  # Clear existing annotations
@@ -346,6 +387,7 @@ class InteractiveTemperaturePlot:
         # Redraw the plot
         self.ax.clear()
         self.init_plot()
+        
     
         # Recreate the annotation object
         self.init_annotation()
@@ -362,6 +404,9 @@ class InteractiveTemperaturePlot:
         self.canvas.draw()
     
         print("Data refreshed and hover event reconnected")  # Debug print
+        
+        # Restore visibility state
+        self.toggle_temp_lines()
         
         
     def close_window(self):
