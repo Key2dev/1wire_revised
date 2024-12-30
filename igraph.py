@@ -40,6 +40,7 @@ class InteractiveTemperaturePlot:
         self.temp1_var = tk.BooleanVar(value=True)
         self.temp2_var = tk.BooleanVar(value=True)
         self.temp3_var = tk.BooleanVar(value=True)
+        self.avg_temp_var = tk.BooleanVar(value=True)
         self.show_comments_var = tk.BooleanVar()
 
         # Initialize the plot
@@ -98,6 +99,12 @@ class InteractiveTemperaturePlot:
                                              variable=self.temp3_var, 
                                              command=self.toggle_temp_lines)
         self.temp3_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.avg_temp_checkbox = tk.Checkbutton(self.control_frame, text="Show Avg Temp", 
+                                            variable=self.avg_temp_var, 
+                                            command=self.toggle_temp_lines)
+        self.avg_temp_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+    
 
         # Add button to update comments
         self.update_comment_button = tk.Button(self.control_frame, text="Update Comment", font=('Arial', '12'), command=self.update_comment)
@@ -168,11 +175,18 @@ class InteractiveTemperaturePlot:
         # Bind selection event:
         self.data_table.bind("<ButtonRelease-1>", self.on_table_select)
 
-
+    def calculate_average_temperature(self):
+        return [(t1 + t2 + t3) / 3 for t1, t2, t3 in zip(self.temperatures, self.temperatures2, self.temperatures3)]
+    
     def init_plot(self):
         self.line1, = self.ax.plot(self.timestamps, self.temperatures, c='blue', label="Temp 1", marker='o', linestyle='-', picker=5, markersize=4)
         self.line2, = self.ax.plot(self.timestamps, self.temperatures2, c='red', label="Temp 2", marker='o', linestyle='-', picker=5, markersize=4)
         self.line3, = self.ax.plot(self.timestamps, self.temperatures3, c='green', label="Temp 3", marker='o', linestyle='-', picker=5, markersize=4)
+        
+        # Avg temp line
+        self.avg_temp = self.calculate_average_temperature()
+        self.line_avg, = self.ax.plot(self.timestamps, self.avg_temp, c='purple', label="Avg Temp", linestyle='--', linewidth=2)
+
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature")
@@ -267,7 +281,8 @@ class InteractiveTemperaturePlot:
         if event.inaxes == self.ax:
             for line, temps in [(self.line1, self.temperatures),
                                 (self.line2, self.temperatures2),
-                                (self.line3, self.temperatures3)]:
+                                (self.line3, self.temperatures3),
+                                (self.line_avg, self.avg_temp)]:
                 cont, ind = line.contains(event)
                 if cont:
                     i = ind["ind"][0]  # Get the index of the nearest point
@@ -277,6 +292,7 @@ class InteractiveTemperaturePlot:
                     text += f"Temp 1: {self.temperatures[i]:.2f}\n"
                     text += f"Temp 2: {self.temperatures2[i]:.2f}\n"
                     text += f"Temp 3: {self.temperatures3[i]:.2f}\n"
+                    text += f"Avg Temp: {self.avg_temp[i]:.2f}\n"
                     if self.comments[i]:
                         text += f"Comment: {self.comments[i]}"
                     self.annotation.set_text(text)
@@ -290,6 +306,7 @@ class InteractiveTemperaturePlot:
         else:
             self.annotation.set_visible(False)
             self.fig.canvas.draw_idle()
+
 
 
     def find_nearest_point(self, x, y, line):
@@ -311,10 +328,12 @@ class InteractiveTemperaturePlot:
         self.line1.set_visible(self.temp1_var.get())
         self.line2.set_visible(self.temp2_var.get())
         self.line3.set_visible(self.temp3_var.get())
+        self.line_avg.set_visible(self.avg_temp_var.get())
         self.update_plot_limits()
         self.canvas.draw()
+
     def update_plot_limits(self):
-        visible_lines = [line for line in [self.line1, self.line2, self.line3] if line.get_visible()]
+        visible_lines = [line for line in [self.line1, self.line2, self.line3, self.line_avg] if line.get_visible()]
         if visible_lines:
             ymin = min(min(line.get_ydata()) for line in visible_lines)
             ymax = max(max(line.get_ydata()) for line in visible_lines)
@@ -322,6 +341,8 @@ class InteractiveTemperaturePlot:
         else:
             self.ax.set_ylim(0, 50)  # Default range if no data is visible
         self.canvas.draw()
+        
+        
     def display_comments(self):
         print("Displaying comments...")  # Debug print
         self.remove_comments()  # Clear existing annotations
@@ -383,7 +404,9 @@ class InteractiveTemperaturePlot:
                 f'{self.temperatures3[i]:.2f}',
                 self.comments[i]
             ))
-    
+        # Recalculate average temperature
+        self.avg_temp = self.calculate_average_temperature()
+        
         # Redraw the plot
         self.ax.clear()
         self.init_plot()
