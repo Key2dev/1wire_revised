@@ -12,7 +12,6 @@ from wire_reader import read_1wire_sensors
 
 # TODO:
 """
-    średnia dla 3 czujników
     datetime unification %Y-%M-%D %H:%M:%S
     backup bazy danych w innych miejscach
     refresh na 5s
