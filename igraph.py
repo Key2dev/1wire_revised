@@ -196,9 +196,10 @@ class InteractiveTemperaturePlot:
         # Set y-range from 0 to 50
         self.ax.set_ylim(0, 50)
         # Format x-axis as date
-        self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
+        self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M:%S'))
         self.ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         self.fig.autofmt_xdate()  # Auto-rotate date labels for readability
+        plt.tight_layout()
 
         # Initialize comment annotations (hidden by default)
         self.comment_annotations = []
