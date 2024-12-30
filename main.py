@@ -18,7 +18,6 @@ from wire_reader import read_1wire_sensors
 #     fix graph display (title, labels, etc.)
 #     implement configuration options
 #     make documentation
-#     fix live graph labels
 
 
 class WireReaderApp:
@@ -111,7 +110,7 @@ class WireReaderApp:
         self.ax.set_ylim(0, 50)  # Temperature range
         self.ax.legend()
         self.ax.set_title("Live Temperature Plot")
-        self.ax.set_xlabel("Index")
+        self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature (°C)")
 
         # Embed Matplotlib Figure in Tkinter
@@ -175,7 +174,7 @@ class WireReaderApp:
         # Update x-axis ticks and labels (using the index as labels)
         self.ax.xaxis.set_major_locator(plt.MultipleLocator(10))  # Major ticks every 10 data points
         self.ax.xaxis.set_minor_locator(plt.MultipleLocator(5))   # Minor ticks every 5 data points
-        self.ax.set_xlabel("Index")
+        self.ax.set_xlabel("Time")
 
         self.canvas.draw()
 
