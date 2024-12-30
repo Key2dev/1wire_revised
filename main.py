@@ -18,7 +18,6 @@ from wire_reader import read_1wire_sensors
 #     fix graph display (title, labels, etc.)
 #     implement configuration options
 #     make documentation
-#     fix spinbox year-ahead defaults
 #     fix live graph labels
 
 

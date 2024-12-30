@@ -18,7 +18,11 @@ class Submenu:
         self.table_name = table_name
         
         # Fetch min and max dates from the database
-        self.min_date, self.max_date = db_functions.get_date_range(db_path, table_name)
+        self.min_date, _ = db_functions.get_date_range(db_path, table_name)
+        
+        # Set max_date to today
+        self.max_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
         # Parse the date strings to datetime objects
         self.min_date = self.parse_date(self.min_date)
@@ -71,7 +75,19 @@ class Submenu:
         # Update the DateEntry widgets with the valid date range
         self.start_date_entry.set_date(self.min_date.date())
         self.end_date_entry.set_date(self.max_date.date())
-
+        
+        # Set the time spinboxes to the earliest and latest times
+        self.start_hour_spinbox.delete(0, tk.END)
+        self.start_hour_spinbox.insert(0, f"{self.min_date.hour:02d}")
+        
+        self.start_minute_spinbox.delete(0, tk.END)
+        self.start_minute_spinbox.insert(0, f"{self.min_date.minute:02d}")
+        
+        self.hour_spinbox.delete(0, tk.END)
+        self.hour_spinbox.insert(0, f"{self.max_date.hour:02d}")
+        
+        self.minute_spinbox.delete(0, tk.END)
+        self.minute_spinbox.insert(0, f"{self.max_date.minute:02d}")
     
     def parse_date(self, date_string):
         # Try parsing with YYYY-MM-DD format first
