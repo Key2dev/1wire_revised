@@ -27,6 +27,12 @@ class InteractiveTemperaturePlot:
         # Create plot frame
         self.plot_frame = tk.Frame(self.main_frame)
         self.plot_frame.pack(fill=tk.BOTH, expand=1)
+        
+        if isinstance(start_time, str):
+            self.start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        if isinstance(end_time, str):
+            self.end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+
 
         # Fetch and prepare data
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
@@ -34,7 +40,9 @@ class InteractiveTemperaturePlot:
         self.temperatures = [row[2] for row in self.dataset]
         self.temperatures2 = [row[3] for row in self.dataset]
         self.temperatures3 = [row[4] for row in self.dataset]
-        self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
+        self.avg_temp = [row[5] for row in self.dataset]
+        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
+
 
         # Initialize checkbox variables
         self.temp1_var = tk.BooleanVar(value=True)
@@ -51,9 +59,7 @@ class InteractiveTemperaturePlot:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
         self.canvas.draw()
 
-        # Now we can call update_plot_limits
-        self.update_plot_limits()
-
+   
         self.init_pick_event()
         self.init_annotation()
         self.init_hover_event()
@@ -134,10 +140,9 @@ class InteractiveTemperaturePlot:
         self.table_scrollbar = tk.Scrollbar(self.table_frame)
         self.table_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Create Treeview
         self.data_table = ttk.Treeview(
             self.table_frame, 
-            columns=('Timestamp', 'Temp1', 'Temp2', 'Temp3', 'Comment'), 
+            columns=('Timestamp', 'Temp1', 'Temp2', 'Temp3', 'AvgTemp', 'Comment'), 
             show='headings', 
             yscrollcommand=self.table_scrollbar.set
         )
@@ -147,6 +152,7 @@ class InteractiveTemperaturePlot:
         self.data_table.heading('Temp1', text='Temp 1')
         self.data_table.heading('Temp2', text='Temp 2')
         self.data_table.heading('Temp3', text='Temp 3')
+        self.data_table.heading('AvgTemp', text='Avg Temp')
         self.data_table.heading('Comment', text='Comment')
 
         # Define column widths
@@ -154,6 +160,7 @@ class InteractiveTemperaturePlot:
         self.data_table.column('Temp1', width=100, anchor='center')
         self.data_table.column('Temp2', width=100, anchor='center')
         self.data_table.column('Temp3', width=100, anchor='center')
+        self.data_table.column('AvgTemp', width=100, anchor='center')
         self.data_table.column('Comment', width=300, anchor='w')
 
         # Populate the table
@@ -163,6 +170,7 @@ class InteractiveTemperaturePlot:
                 f'{self.temperatures[i]:.2f}',
                 f'{self.temperatures2[i]:.2f}', 
                 f'{self.temperatures3[i]:.2f}',
+                f'{self.avg_temp[i]:.2f}',
                 self.comments[i]
             ))
 
@@ -174,32 +182,28 @@ class InteractiveTemperaturePlot:
         
         # Bind selection event:
         self.data_table.bind("<ButtonRelease-1>", self.on_table_select)
-
-    def calculate_average_temperature(self):
-        return [(t1 + t2 + t3) / 3 for t1, t2, t3 in zip(self.temperatures, self.temperatures2, self.temperatures3)]
     
     def init_plot(self):
         self.line1, = self.ax.plot(self.timestamps, self.temperatures, c='blue', label="Temp 1", marker='o', linestyle='-', picker=5, markersize=4)
         self.line2, = self.ax.plot(self.timestamps, self.temperatures2, c='red', label="Temp 2", marker='o', linestyle='-', picker=5, markersize=4)
         self.line3, = self.ax.plot(self.timestamps, self.temperatures3, c='green', label="Temp 3", marker='o', linestyle='-', picker=5, markersize=4)
-        
-        # Avg temp line
-        self.avg_temp = self.calculate_average_temperature()
         self.line_avg, = self.ax.plot(self.timestamps, self.avg_temp, c='purple', label="Avg Temp", linestyle='--', linewidth=2)
-
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature")
-        self.ax.set_title(f"Temperature Plot {self.start_time} to {self.end_time}")
+        self.ax.set_title("Interactive Temperature Plot")
         self.ax.legend()
 
         # Set y-range from 0 to 50
         self.ax.set_ylim(0, 50)
+
+        # Set y-axis ticks to integers
+        self.ax.yaxis.set_major_locator(plt.MultipleLocator(5))
+        self.ax.yaxis.set_minor_locator(plt.MultipleLocator(1))
         # Format x-axis as date
-        self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M:%S'))
+        self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
         self.ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         self.fig.autofmt_xdate()  # Auto-rotate date labels for readability
-        plt.tight_layout()
 
         # Initialize comment annotations (hidden by default)
         self.comment_annotations = []
@@ -208,6 +212,7 @@ class InteractiveTemperaturePlot:
         self.selected_scatter1 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp1")
         self.selected_scatter2 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp2")
         self.selected_scatter3 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp3")
+
 
 
     def init_pick_event(self):
@@ -316,6 +321,46 @@ class InteractiveTemperaturePlot:
         distances = np.sqrt((xdata - x)**2 + (ydata - y)**2)
         return np.argmin(distances)
     
+    
+    def refresh_data(self):
+        # Re-fetch data and update plot and table
+        self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
+        self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
+        self.temperatures = [row[2] for row in self.dataset]
+        self.temperatures2 = [row[3] for row in self.dataset]
+        self.temperatures3 = [row[4] for row in self.dataset]
+        self.avg_temperatures = [row[5] for row in self.dataset]  # Assuming avg_temp is the 6th column
+        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
+
+        # Clear and repopulate the table
+        for item in self.data_table.get_children():
+            self.data_table.delete(item)
+        for i in range(len(self.timestamps)):
+            self.data_table.insert('', 'end', values=(
+                self.timestamps[i].strftime('%Y-%m-%d %H:%M:%S'),
+                f'{self.temperatures[i]:.2f}',
+                f'{self.temperatures2[i]:.2f}', 
+                f'{self.temperatures3[i]:.2f}',
+                f'{self.avg_temperatures[i]:.2f}',
+                self.comments[i]
+            ))
+
+        # Redraw the plot
+        self.ax.clear()
+        self.init_plot()
+        
+        self.ax.set_ylim(0, 50)
+
+        # Recreate the annotation object
+        self.init_annotation()
+
+        # Disconnect previous events
+        if hasattr(self, 'hover_connection'):
+            self.fig.canvas.mpl_disconnect(self.hover_connection)
+
+        # Reconnect hover event
+        self.init_hover_event()
+    
     # Comment checkbox logic
     def toggle_comments(self):
         show_comments = self.show_comments_var.get()
@@ -330,20 +375,9 @@ class InteractiveTemperaturePlot:
         self.line2.set_visible(self.temp2_var.get())
         self.line3.set_visible(self.temp3_var.get())
         self.line_avg.set_visible(self.avg_temp_var.get())
-        self.update_plot_limits()
-        self.canvas.draw()
+        self.canvas.draw_idle()
 
-    def update_plot_limits(self):
-        visible_lines = [line for line in [self.line1, self.line2, self.line3, self.line_avg] if line.get_visible()]
-        if visible_lines:
-            ymin = min(min(line.get_ydata()) for line in visible_lines)
-            ymax = max(max(line.get_ydata()) for line in visible_lines)
-            self.ax.set_ylim(max(0, ymin - 5), min(50, ymax + 5))
-        else:
-            self.ax.set_ylim(0, 50)  # Default range if no data is visible
-        self.canvas.draw()
-        
-        
+
     def display_comments(self):
         print("Displaying comments...")  # Debug print
         self.remove_comments()  # Clear existing annotations
@@ -389,9 +423,9 @@ class InteractiveTemperaturePlot:
         # Re-fetch data and update plot and table
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] + 1 for row in self.dataset]
-        self.temperatures2 = [row[3] + 3 for row in self.dataset]
-        self.temperatures3 = [row[4] + 5 for row in self.dataset]
+        self.temperatures = [float(row[2]) for row in self.dataset]
+        self.temperatures2 = [float(row[3]) for row in self.dataset]
+        self.temperatures3 = [float(row[4]) for row in self.dataset]
         self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
     
         # Clear and repopulate the table

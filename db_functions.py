@@ -112,31 +112,21 @@ def records_by_time_csv(database_name, table_name, start_date, end_date):
         print(f"An error occurred: {e}")
 
 
-def fetch_filtered_data(database_name, table_name, start_date, end_date):
-    try:
-        # Connect to the database
-        conn = sqlite3.connect(database_name)
-        cursor = conn.cursor()
-
-        # Query to fetch data between the specified dates
-        query = f"""
-        SELECT id, data, T1, T2, T3, comment 
-        FROM {table_name} 
-        WHERE data BETWEEN ? AND ?
-        ORDER BY data;
-        """
-        cursor.execute(query, (start_date, end_date))
-
-        # Fetch column names and rows
-        # TODO: This is not used in the application
-        column_names = [description[0] for description in cursor.description]
-        rows = cursor.fetchall()
-        return rows
-    
-    except Exception as e:
-        print(f"An error occurred: {e}")
-        rows = []
-        
+def fetch_filtered_data(db_path, table_name, start_time, end_time):
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    query = f"""
+    SELECT id, data, T1, T2, T3, 
+           (T1 + T2 + T3) / 3.0 as avg_temp,
+           comment
+    FROM {table_name}
+    WHERE data BETWEEN ? AND ?
+    ORDER BY data
+    """
+    cursor.execute(query, (start_time, end_time))
+    data = cursor.fetchall()
+    conn.close()
+    return data
 def add_comment(database_name, table_name, timestamp:str, comment:str):
     try:
         if len(comment)>250:
