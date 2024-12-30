@@ -12,8 +12,8 @@ from matplotlib.lines import Line2D
 class InteractiveTemperaturePlot:
     def __init__(self, parent, db_path, table_name, start_time, end_time):
         self.igraph = tk.Toplevel(parent)
-        self.igraph.title("Interactive Temperature Plot")
-        self.igraph.geometry("1200x800")
+        self.igraph.title(f"Temperature Plot {start_time} to {end_time}")
+        self.igraph.geometry("1200x600")
 
         self.db_path = db_path
         self.table_name = table_name
@@ -190,7 +190,7 @@ class InteractiveTemperaturePlot:
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature")
-        self.ax.set_title("Interactive Temperature Plot")
+        self.ax.set_title(f"Temperature Plot {self.start_time} to {self.end_time}")
         self.ax.legend()
 
         # Set y-range from 0 to 50

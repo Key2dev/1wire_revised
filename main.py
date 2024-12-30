@@ -15,7 +15,6 @@ from wire_reader import read_1wire_sensors
 #     backup bazy danych w innych miejscach
 #     refresh na 5s
 #     delete unused buttons/methods
-#     fix graph display (title, labels, etc.)
 #     implement configuration options
 #     make documentation
 
