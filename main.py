@@ -165,7 +165,7 @@ class WireReaderApp:
         # Implement a submenu for filtering data
         print("Opening Filter Submenu")
         
-        Submenu(self.root, self.db_path, self.table_name)
+        Submenu(self.root, self.db_path, self.table_name, temp_range=self.config.get("temperature_range"))
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")

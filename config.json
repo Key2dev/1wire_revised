@@ -5,8 +5,8 @@
     "update_interval": 1000,
     "graph_points": 60,
     "temperature_range": [
-        0,
-        50
+        20,
+        40
     ],
     "export_filename": "test_dbdump.csv"
 }

@@ -7,7 +7,7 @@ import datetime
 
 
 class Submenu:
-    def __init__(self, parent, db_path, table_name, title="Submenu"):  # Added db_path and table_name as parameters to the constructor.
+    def __init__(self, parent, db_path, table_name, title="Submenu", temp_range=(0, 50)):  # Added db_path and table_name as parameters to the constructor.
         # Create a new Toplevel window
         self.window = tk.Toplevel(parent)
         self.window.title(title)
@@ -16,6 +16,7 @@ class Submenu:
         # Create a database connection
         self.db_path = db_path
         self.table_name = table_name
+        self.temp_range = temp_range
         
         # Fetch min and max dates from the database
         self.min_date, _ = db_functions.get_date_range(db_path, table_name)
@@ -149,7 +150,7 @@ class Submenu:
         print(f"Generating graph for dates: {start_date} to {end_date}")
         
         # Open the graph window and pass the fetched data
-        InteractiveTemperaturePlot(self.window, self.db_path, self.table_name, start_date, end_date)
+        InteractiveTemperaturePlot(self.window, self.db_path, self.table_name, start_date, end_date, temp_range=self.temp_range)
 
 
     def save_filtered_to_csv(self):

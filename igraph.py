@@ -10,7 +10,7 @@ import numpy as np
 from matplotlib.lines import Line2D
 
 class InteractiveTemperaturePlot:
-    def __init__(self, parent, db_path, table_name, start_time, end_time):
+    def __init__(self, parent, db_path, table_name, start_time, end_time, temp_range=(0, 50)):
         self.igraph = tk.Toplevel(parent)
         self.igraph.title(f"Temperature Plot {start_time} to {end_time}")
         self.igraph.geometry("1200x600")
@@ -19,6 +19,8 @@ class InteractiveTemperaturePlot:
         self.table_name = table_name
         self.start_time = start_time
         self.end_time = end_time
+        self.temp_range = temp_range
+        
 
         # Create main frame
         self.main_frame = tk.Frame(self.igraph)
@@ -194,8 +196,8 @@ class InteractiveTemperaturePlot:
         self.ax.set_title(f"Temperature Plot {self.start_time} to {self.end_time}")
         self.ax.legend()
 
-        # Set y-range from 0 to 50
-        self.ax.set_ylim(0, 50)
+        # Set y-range to temp_range
+        self.ax.set_ylim(self.temp_range)
 
         # Set y-axis ticks to integers
         self.ax.yaxis.set_major_locator(plt.MultipleLocator(5))
@@ -351,7 +353,7 @@ class InteractiveTemperaturePlot:
         self.ax.clear()
         self.init_plot()
         
-        self.ax.set_ylim(0, 50)
+        self.ax.set_ylim(self.temp_range)
 
         # Recreate the annotation object
         self.init_annotation()
