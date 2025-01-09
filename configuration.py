@@ -9,15 +9,16 @@ import db_functions
 class Config:
     def __init__(self):
         self.config_file = "config.json"
-        self.default_config = {
-            "debug_mode": True,
+        self.original_default_config = {
             "db_path": "temperatury.db",
             "table_name": "temps",
             "update_interval": 1000,  # in milliseconds
             "graph_points": 60,
             "temperature_range": [0, 50],
-            "export_filename": "test_dbdump.csv"
+            "export_filename": "test_dbdump.csv",
+            "debug_mode": True
         }
+        self.default_config = self.original_default_config.copy()
         self.load_config()
 
     def load_config(self):
@@ -139,12 +140,14 @@ class Config:
                     value = entry.get()
                 else:
                     value = entry.get()
-                self.set(key, value)
+                self.default_config[key] = value  # Update the current config
+            self.save_config()  # Save to file
             root.destroy()
+
 
         def reset_to_default():
             for key, entry in entries.items():
-                default_value = self.default_config[key]
+                default_value = self.original_default_config[key]
                 if key == "temperature_range":
                     min_temp, max_temp = entry
                     min_temp.set(default_value[0])
@@ -154,6 +157,7 @@ class Config:
                 else:
                     entry.delete(0, tk.END)
                     entry.insert(0, str(default_value))
+
 
         ttk.Button(frame, text="Save", command=save_changes).grid(column=0, row=row, pady=10)
         ttk.Button(frame, text="Reset to Default", command=reset_to_default).grid(column=1, row=row, pady=10)

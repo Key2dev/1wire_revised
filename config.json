@@ -1,12 +1,12 @@
 {
-    "debug_mode": true,
-    "db_path": "C:/Users/KarolK/Desktop/cosie/tutoskrypty/test1.db",
+    "db_path": "temperatury.db",
     "table_name": "temps",
     "update_interval": 1000,
     "graph_points": 60,
     "temperature_range": [
-        1,
-        40
+        0,
+        50
     ],
-    "export_filename": "C:/Users/KarolK/Desktop/cosie/tutoskrypty/test1.db"
+    "export_filename": "test_dbdump.csv",
+    "debug_mode": true
 }
