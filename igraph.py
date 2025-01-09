@@ -427,7 +427,8 @@ class InteractiveTemperaturePlot:
         self.temperatures = [float(row[2]) for row in self.dataset]
         self.temperatures2 = [float(row[3]) for row in self.dataset]
         self.temperatures3 = [float(row[4]) for row in self.dataset]
-        self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
+        self.avg_temperatures = [float(row[5]) for row in self.dataset]  # Assuming avg_temp is the 6th column
+        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
     
         # Clear and repopulate the table
         for item in self.data_table.get_children():
@@ -440,8 +441,6 @@ class InteractiveTemperaturePlot:
                 f'{self.temperatures3[i]:.2f}',
                 self.comments[i]
             ))
-        # Recalculate average temperature
-        self.avg_temp = self.calculate_average_temperature()
         
         # Redraw the plot
         self.ax.clear()
