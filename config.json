@@ -1,0 +1,12 @@
+{
+    "debug_mode": true,
+    "db_path": "temperatury.db",
+    "table_name": "temps",
+    "update_interval": 1000,
+    "graph_points": 60,
+    "temperature_range": [
+        0,
+        50
+    ],
+    "export_filename": "test_dbdump.csv"
+}

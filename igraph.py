@@ -191,7 +191,7 @@ class InteractiveTemperaturePlot:
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature")
-        self.ax.set_title("Interactive Temperature Plot")
+        self.ax.set_title(f"Temperature Plot {self.start_time} to {self.end_time}")
         self.ax.legend()
 
         # Set y-range from 0 to 50
@@ -267,6 +267,7 @@ class InteractiveTemperaturePlot:
                 text += f"Temp 1: {self.temperatures[i]:.2f}\n"
                 text += f"Temp 2: {self.temperatures2[i]:.2f}\n"
                 text += f"Temp 3: {self.temperatures3[i]:.2f}\n"
+                text += f"Avg Temp: {self.avg_temp[i]:.2f}\n"
                 if self.comments[i]:
                     text += f"Comment: {self.comments[i]}"
                 self.annotation.set_text(text)
@@ -412,7 +413,7 @@ class InteractiveTemperaturePlot:
         if selected_item:
             item = self.data_table.item(selected_item)
             timestamp = item['values'][0]
-            comment = item['values'][4]
+            comment = item['values'][5]
             new_comment = tk.simpledialog.askstring("Update Comment", "Enter new comment:", initialvalue=comment)
             if new_comment is not None:
                 db_functions.add_comment(self.db_path, self.table_name, timestamp, new_comment)
