@@ -161,7 +161,7 @@ def create_db(database_name:str, table_name:str):
             T1 FLOAT(10,2),
             T2 FLOAT(10,2),
             T3 FLOAT(10,2),
-            comment VARCHAR(250) DEFAULT '';
+            comment VARCHAR(250) DEFAULT ''
         );
         """
         cursor.execute(query)

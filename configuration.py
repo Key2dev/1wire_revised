@@ -1,5 +1,10 @@
 import json
 import os
+import tkinter as tk
+from tkinter import ttk
+from tkinter import messagebox
+from tkinter import filedialog
+import db_functions
 
 class Config:
     def __init__(self):
@@ -33,3 +38,130 @@ class Config:
     def set(self, key, value):
         self.default_config[key] = value
         self.save_config()
+
+    def edit_config_ui(self):
+        root = tk.Tk()
+        root.title("Edit Configuration")
+
+        frame = ttk.Frame(root, padding="10")
+        frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+
+        row = 0
+        entries = {}
+        for key, value in self.default_config.items():
+            ttk.Label(frame, text=key).grid(column=0, row=row, sticky=tk.W, pady=5)
+
+            if key == "db_path":
+                entry = ttk.Entry(frame)
+                entry.insert(0, str(value))
+                entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
+
+                entries[key] = entry
+
+                def choose_db_path():
+                    filename = filedialog.askopenfilename(
+                        title="Select Database File",
+                        filetypes=(("SQLite Database", "*.db"), ("All files", "*.*"))
+                    )
+                    if filename:
+                        entry.delete(0, tk.END)
+                        entry.insert(0, filename)
+                        self.set("db_path", filename)  # Update the configuration
+                        messagebox.showinfo("Success", f"Database path updated to: {filename}")
+
+                def create_new_db():
+                    new_db_path = filedialog.asksaveasfilename(
+                        title="Create New Database",
+                        defaultextension=".db",
+                        filetypes=(("SQLite Database", "*.db"), ("All files", "*.*"))
+                    )
+                    if new_db_path:
+                        try:
+                            # Delete existing database if it exists
+                            if os.path.exists(new_db_path):
+                                if messagebox.askyesno("Confirm Overwrite", f"The file {new_db_path} already exists. Do you want to overwrite it?"):
+                                    os.remove(new_db_path)
+                                else:
+                                    return
+
+                            # Create new database
+                            db_functions.create_db(new_db_path, self.default_config["table_name"])
+
+                            # Update entry and config
+                            entry.delete(0, tk.END)
+                            entry.insert(0, new_db_path)
+                            self.set("db_path", new_db_path)
+                            db_functions.create_db(new_db_path, self.default_config["table_name"])  # Recreate table with default settings
+
+                            messagebox.showinfo("Success", f"New database created and set as active at {new_db_path}")
+                        except Exception as e:
+                            messagebox.showerror("Error", f"Failed to create new database: {str(e)}")
+
+                ttk.Button(frame, text="Choose...", command=choose_db_path).grid(column=2, row=row, pady=5)
+                ttk.Button(frame, text="Create New DB", command=create_new_db).grid(column=3, row=row, pady=5)
+
+                entries[key] = entry
+            elif key == "temperature_range":
+                frame_temp = ttk.Frame(frame)
+                frame_temp.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
+
+                min_temp = tk.IntVar(value=value[0])
+                max_temp = tk.IntVar(value=value[1])
+
+                ttk.Spinbox(frame_temp, from_=-273, to=1000, textvariable=min_temp, width=5).pack(side=tk.LEFT, padx=(0, 5))
+                ttk.Label(frame_temp, text="-").pack(side=tk.LEFT, padx=5)
+                ttk.Spinbox(frame_temp, from_=-273, to=1000, textvariable=max_temp, width=5).pack(side=tk.LEFT, padx=(5, 0))
+
+                entries[key] = (min_temp, max_temp)
+            elif isinstance(value, bool):
+                var = tk.BooleanVar(value=value)
+                entry = ttk.Checkbutton(frame, variable=var, onvalue=True, offvalue=False)
+                entries[key] = var
+            elif isinstance(value, int):
+                var = tk.IntVar(value=value)
+                entry = ttk.Spinbox(frame, from_=0, to=10000, textvariable=var)
+                entries[key] = var
+            else:  # string
+                entry = ttk.Entry(frame)
+                entry.insert(0, str(value))
+                entries[key] = entry
+
+            if key not in ["db_path", "temperature_range"]:
+                entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
+            row += 1
+
+        def save_changes():
+            for key, entry in entries.items():
+                if key == "temperature_range":
+                    min_temp, max_temp = entry
+                    value = [min_temp.get(), max_temp.get()]
+                elif isinstance(entry, tk.Variable):
+                    value = entry.get()
+                else:
+                    value = entry.get()
+                self.set(key, value)
+            root.destroy()
+
+        def reset_to_default():
+            for key, entry in entries.items():
+                default_value = self.default_config[key]
+                if key == "temperature_range":
+                    min_temp, max_temp = entry
+                    min_temp.set(default_value[0])
+                    max_temp.set(default_value[1])
+                elif isinstance(entry, tk.Variable):
+                    entry.set(default_value)
+                else:
+                    entry.delete(0, tk.END)
+                    entry.insert(0, str(default_value))
+
+        ttk.Button(frame, text="Save", command=save_changes).grid(column=0, row=row, pady=10)
+        ttk.Button(frame, text="Reset to Default", command=reset_to_default).grid(column=1, row=row, pady=10)
+
+        root.mainloop()
+
+
+# Example usage
+if __name__ == "__main__":
+    config = Config()
+    config.edit_config_ui()
