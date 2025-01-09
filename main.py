@@ -87,6 +87,9 @@ class WireReaderApp:
 
         self.button3 = tk.Button(self.root, text="Filter", font=('Arial', '12'), command=self.open_submenu)
         self.button3.pack(padx=10, pady=10)
+        
+        self.button4 = tk.Button(self.root, text="Config", font=('Arial', '12'), command=self.configuration_menu)
+        self.button4.pack(padx=10, pady=10)
 
     def create_live_graph(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
@@ -156,9 +159,8 @@ class WireReaderApp:
         self.canvas.draw()
 
     def export_db(self):
-        # TODO: this is dumping the while data to a csv file ?remove?
         print("Export DataBase to csv file")
-        db_functions.export_to_csv(self.db_path, self.table_name, self.config.get("export_filename"))
+        db_functions.export_to_csv(self.db_path, self.table_name, self.config.get("export_path"))
 
         
     def open_submenu(self):
@@ -172,6 +174,9 @@ class WireReaderApp:
         # Cancel any scheduled after callbacks
         self.root.quit()  # Stop the main loop
         self.root.destroy()  # Free resources
+    
+    def configuration_menu(self):
+        self.config.edit_config_ui()
 
     def run(self):
         self.root.mainloop()

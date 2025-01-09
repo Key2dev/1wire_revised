@@ -3,23 +3,44 @@ import csv
 import os
 from tkinter import filedialog
 import tkinter as tk
+from configuration import Config
 
-def export_to_csv(database_name:str, table_name:str, output_name:str):
-    # Convert database to CSV format.
-    
+def export_to_csv(database_name:str, table_name:str, default_path:str = None):
+    # Get the default path from config if not provided
+    if default_path is None:
+        config = Config()
+        default_path = config.get("export_filepath", "")
+
+    # Create a root window and hide it
+    root = tk.Tk()
+    root.withdraw()
+
+    # Open file dialog to choose save path and filename
+    output_name = filedialog.asksaveasfilename(
+        defaultextension=".csv",
+        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+        title="Save CSV file as",
+        initialdir=default_path
+    )
+
+    # If user cancels the file dialog, exit the function
+    if not output_name:
+        print("Export cancelled.")
+        return
+
     # Connect to the database
-    conn = sqlite3.connect(database_name)  # Replace with your database file name
+    conn = sqlite3.connect(database_name)
     cursor = conn.cursor()
 
     # Query to fetch all data from the table
-    query = f"SELECT * FROM {table_name}"  # Replace with your table name
+    query = f"SELECT * FROM {table_name}"
     cursor.execute(query)
 
     # Fetch column names
     column_names = [description[0] for description in cursor.description]
 
     # Open a CSV file to write data
-    with open(output_name, "w", newline="") as csv_file:  # Replace with desired CSV file name
+    with open(output_name, "w", newline="", encoding="utf-8") as csv_file:
         csv_writer = csv.writer(csv_file)
 
         # Write the column names as the first row
@@ -31,7 +52,8 @@ def export_to_csv(database_name:str, table_name:str, output_name:str):
     # Close the database connection
     conn.close()
 
-    print("Export complete!")
+    print(f"Export complete! File saved as: {output_name}")
+
 
 def insert_data_to_db(database_name:str, table_name:str, date: str, t1: float, t2: float, t3: float):
     # Connect to the database and insert data (avoids accidental UI variable polluting the DB)
@@ -59,18 +81,24 @@ def fetch_last_n_records(database, table_name, n):
     
     return records
     
-def records_by_time_csv(database_name, table_name, start_date, end_date):
+def records_by_time_csv(database_name, table_name, start_date, end_date, default_path: str = None):
     try:
+        # Get the default path from config if not provided
+        if default_path is None:
+            config = Config()
+            default_path = config.get("export_filepath", "")
+
         # Create a root window and hide it
         root = tk.Tk()
         root.withdraw()
 
         # Open file dialog to choose save path and filename
         output_name = filedialog.asksaveasfilename(
-            initialfile= f"1wire_{start_date}_{end_date}.csv",
+            initialfile= f"1wire_{start_date.strftime("%Y%m%d_%H%M%S")}_{end_date.strftime("%Y%m%d_%H%M%S")}.csv",
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Save CSV file as"
+            title="Save CSV file as",
+            initialdir=default_path
         )
 
         # If user cancels the file dialog, exit the function

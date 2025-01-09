@@ -15,7 +15,7 @@ class Config:
             "update_interval": 1000,  # in milliseconds
             "graph_points": 60,
             "temperature_range": [0, 50],
-            "export_filename": "test_dbdump.csv",
+            "export_path": "test_dbdump.csv",
             "debug_mode": True
         }
         self.default_config = self.original_default_config.copy()
@@ -41,7 +41,7 @@ class Config:
         self.save_config()
 
     def edit_config_ui(self):
-        root = tk.Tk()
+        root = tk.Toplevel()
         root.title("Edit Configuration")
 
         frame = ttk.Frame(root, padding="10")
@@ -52,54 +52,59 @@ class Config:
         for key, value in self.default_config.items():
             ttk.Label(frame, text=key).grid(column=0, row=row, sticky=tk.W, pady=5)
 
-            if key == "db_path":
+            if key in ["db_path", "export_path"]:
                 entry = ttk.Entry(frame)
                 entry.insert(0, str(value))
                 entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
 
-                entries[key] = entry
+                def choose_path(path_type, entry_widget):
+                    def inner_choose_path():
+                        if path_type == "db_path":
+                            filename = filedialog.askopenfilename(
+                                title="Select Database File",
+                                filetypes=(("SQLite Database", "*.db"), ("All files", "*.*"))
+                            )
+                        else:  # export_path
+                            filename = filedialog.askdirectory(
+                                title="Select Export Directory"
+                            )
+                        if filename:
+                            entry_widget.delete(0, tk.END)
+                            entry_widget.insert(0, filename)
+                            self.set(path_type, filename)
+                            messagebox.showinfo("Success", f"{path_type.capitalize()} updated to: {filename}")
+                    return inner_choose_path
 
-                def choose_db_path():
-                    filename = filedialog.askopenfilename(
-                        title="Select Database File",
-                        filetypes=(("SQLite Database", "*.db"), ("All files", "*.*"))
-                    )
-                    if filename:
-                        entry.delete(0, tk.END)
-                        entry.insert(0, filename)
-                        self.set("db_path", filename)  # Update the configuration
-                        messagebox.showinfo("Success", f"Database path updated to: {filename}")
+                ttk.Button(frame, text="Choose...", command=choose_path(key, entry)).grid(column=2, row=row, pady=5)
 
-                def create_new_db():
-                    new_db_path = filedialog.asksaveasfilename(
-                        title="Create New Database",
-                        defaultextension=".db",
-                        filetypes=(("SQLite Database", "*.db"), ("All files", "*.*"))
-                    )
-                    if new_db_path:
-                        try:
-                            # Delete existing database if it exists
-                            if os.path.exists(new_db_path):
-                                if messagebox.askyesno("Confirm Overwrite", f"The file {new_db_path} already exists. Do you want to overwrite it?"):
-                                    os.remove(new_db_path)
-                                else:
-                                    return
+                if key == "db_path":
+                    def create_new_db():
+                        new_db_path = filedialog.asksaveasfilename(
+                            title="Create New Database",
+                            defaultextension=".db",
+                            filetypes=(("SQLite Database", "*.db"), ("All files", "*.*"))
+                        )
+                        if new_db_path:
+                            try:
+                                if os.path.exists(new_db_path):
+                                    if messagebox.askyesno("Confirm Overwrite", f"The file {new_db_path} already exists. Do you want to overwrite it?"):
+                                        os.remove(new_db_path)
+                                    else:
+                                        return
 
-                            # Create new database
-                            db_functions.create_db(new_db_path, self.default_config["table_name"])
+                                db_functions.create_db(new_db_path, self.default_config["table_name"])
 
-                            # Update entry and config
-                            entry.delete(0, tk.END)
-                            entry.insert(0, new_db_path)
-                            self.set("db_path", new_db_path)
-                            db_functions.create_db(new_db_path, self.default_config["table_name"])  # Recreate table with default settings
+                                # Update the entry widget
+                                entries["db_path"].delete(0, tk.END)
+                                entries["db_path"].insert(0, new_db_path)
+                                self.set("db_path", new_db_path)
 
-                            messagebox.showinfo("Success", f"New database created and set as active at {new_db_path}")
-                        except Exception as e:
-                            messagebox.showerror("Error", f"Failed to create new database: {str(e)}")
+                                messagebox.showinfo("Success", f"New database created and set as active at {new_db_path}")
+                            except Exception as e:
+                                messagebox.showerror("Error", f"Failed to create new database: {str(e)}")
 
-                ttk.Button(frame, text="Choose...", command=choose_db_path).grid(column=2, row=row, pady=5)
-                ttk.Button(frame, text="Create New DB", command=create_new_db).grid(column=3, row=row, pady=5)
+                    ttk.Button(frame, text="Create New DB", command=create_new_db).grid(column=3, row=row, pady=5)
+
 
                 entries[key] = entry
             elif key == "temperature_range":
@@ -127,7 +132,7 @@ class Config:
                 entry.insert(0, str(value))
                 entries[key] = entry
 
-            if key not in ["db_path", "temperature_range"]:
+            if key not in ["db_path", "export_path", "temperature_range"]:
                 entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
             row += 1
 
@@ -162,10 +167,17 @@ class Config:
         ttk.Button(frame, text="Save", command=save_changes).grid(column=0, row=row, pady=10)
         ttk.Button(frame, text="Reset to Default", command=reset_to_default).grid(column=1, row=row, pady=10)
 
+        def on_closing():
+            root.quit()
+            root.destroy()
+        
+        root.protocol("WM_DELETE_WINDOW", on_closing)
+        
         root.mainloop()
+        
 
 
-# Example usage
-if __name__ == "__main__":
-    config = Config()
-    config.edit_config_ui()
+# # Example usage / outside edit
+# if __name__ == "__main__":
+#     config = Config()
+#     config.edit_config_ui()

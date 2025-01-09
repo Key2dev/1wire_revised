@@ -8,6 +8,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import tkinter.simpledialog
 import numpy as np
 from matplotlib.lines import Line2D
+from configuration import Config
 
 class InteractiveTemperaturePlot:
     def __init__(self, parent, db_path, table_name, start_time, end_time, temp_range=(0, 50)):
@@ -475,10 +476,13 @@ class InteractiveTemperaturePlot:
 
     # Button functions
     def export_data(self):
-        # TODO: add some functionality to determine filepath - done in db_functions.py
         print("Exporting data...")
-        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time)
         
+        config = Config()
+        default_path = config.get("export_path")
+        
+        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, default_path)
+
         
 # TODO: this is for debugging, remove later
 def main():
