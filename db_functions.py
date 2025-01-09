@@ -116,17 +116,18 @@ def fetch_filtered_data(db_path, table_name, start_time, end_time):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     query = f"""
-    SELECT id, data, T1, T2, T3, 
-           (T1 + T2 + T3) / 3.0 as avg_temp,
+    SELECT id, data, CAST(T1 AS FLOAT), CAST(T2 AS FLOAT), CAST(T3 AS FLOAT), 
+           CAST((T1 + T2 + T3) / 3.0 AS FLOAT) as avg_temp,
            comment
     FROM {table_name}
     WHERE data BETWEEN ? AND ?
     ORDER BY data
     """
-    cursor.execute(query, (start_time, end_time))
+    cursor.execute(query, (start_time.strftime("%Y-%m-%d %H:%M:%S"), end_time.strftime("%Y-%m-%d %H:%M:%S")))
     data = cursor.fetchall()
     conn.close()
     return data
+
 def add_comment(database_name, table_name, timestamp:str, comment:str):
     try:
         if len(comment)>250:

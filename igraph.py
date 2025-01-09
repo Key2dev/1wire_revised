@@ -37,10 +37,10 @@ class InteractiveTemperaturePlot:
         # Fetch and prepare data
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] for row in self.dataset]
-        self.temperatures2 = [row[3] for row in self.dataset]
-        self.temperatures3 = [row[4] for row in self.dataset]
-        self.avg_temp = [row[5] for row in self.dataset]
+        self.temperatures = [float(row[2]) for row in self.dataset]
+        self.temperatures2 = [float(row[3]) for row in self.dataset]
+        self.temperatures3 = [float(row[4]) for row in self.dataset]
+        self.avg_temp = [float(row[5]) for row in self.dataset]
         self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
 
 
@@ -167,10 +167,10 @@ class InteractiveTemperaturePlot:
         for i in range(len(self.timestamps)):
             self.data_table.insert('', 'end', values=(
                 self.timestamps[i].strftime('%Y-%m-%d %H:%M:%S'),
-                f'{self.temperatures[i]:.2f}',
-                f'{self.temperatures2[i]:.2f}', 
-                f'{self.temperatures3[i]:.2f}',
-                f'{self.avg_temp[i]:.2f}',
+                f'{float(self.temperatures[i]):.2f}',
+                f'{float(self.temperatures2[i]):.2f}', 
+                f'{float(self.temperatures3[i]):.2f}',
+                f'{float(self.avg_temp[i]):.2f}',
                 self.comments[i]
             ))
 
@@ -203,7 +203,8 @@ class InteractiveTemperaturePlot:
         # Format x-axis as date
         self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
         self.ax.xaxis.set_major_locator(mdates.AutoDateLocator())
-        self.fig.autofmt_xdate()  # Auto-rotate date labels for readability
+        
+        plt.gcf().autofmt_xdate()  # Auto-rotate date labels for readability
 
         # Initialize comment annotations (hidden by default)
         self.comment_annotations = []
