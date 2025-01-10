@@ -193,6 +193,7 @@ class Config:
 
 
 # # Example usage / outside edit
+# TODO: delete
 if __name__ == "__main__":
     root = tk.Tk()
     app = Config(root)

@@ -7,6 +7,7 @@ import db_functions
 import datetime
 from submenu import Submenu
 from configuration import Config
+import sys
 
 # Old reader implementation
 from wire_reader import read_1wire_sensors
@@ -172,22 +173,56 @@ class WireReaderApp:
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")
+        self.close_application()
+
+    def close_application(self):
+        print("Closing application...")
         # Cancel any scheduled after callbacks
-        self.root.after_cancel(self.update_job)  # Cancel the scheduled update
+        if hasattr(self, 'update_job'):
+            self.root.after_cancel(self.update_job)  # Cancel the scheduled update
+
+        # Close all top-level windows
+        for window in self.root.winfo_children():
+            if isinstance(window, tk.Toplevel):
+                window.destroy()
+
+        # Close the matplotlib figure
+        plt.close(self.fig)
+
+        # Destroy all widgets
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Stop the main loop and destroy the root window
+        self.root.quit()
+        self.root.destroy()
+
+        # Force exit the Python interpreter
+        sys.exit(0)
+
         self.root.quit()  # Stop the main loop
         self.root.destroy()  # Free resources
+
 
     
     def configuration_menu(self):
         self.config.edit_config_ui()
 
     def run(self):
-        self.root.protocol("WM_DELETE_WINDOW", self.exit_click)
-        self.root.mainloop()
+        self.root.protocol("WM_DELETE_WINDOW", self.close_application)
+        try:
+            self.root.mainloop()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            self.close_application()
 
 def main():
     app = WireReaderApp()
-    app.run()
+    try:
+        app.run()
+    except Exception as e:
+        print(f"An unhandled exception occurred: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
