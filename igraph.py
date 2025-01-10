@@ -11,16 +11,19 @@ from matplotlib.lines import Line2D
 from configuration import Config
 
 class InteractiveTemperaturePlot:
-    def __init__(self, parent, db_path, table_name, start_time, end_time, temp_range=(0, 50)):
+    def __init__(self, parent, start_time, end_time):
         self.igraph = tk.Toplevel(parent)
         self.igraph.title(f"Temperature Plot {start_time} to {end_time}")
         self.igraph.geometry("1200x600")
+        
+        self.config = Config(self.igraph)
 
-        self.db_path = db_path
-        self.table_name = table_name
+        self.db_path = self.config.get("db_path")
+        self.table_name = self.config.get("table_name")
+        self.temp_range = self.config.get("temperature_range")
+        
         self.start_time = start_time
         self.end_time = end_time
-        self.temp_range = temp_range
         
 
         # Create main frame
@@ -478,8 +481,7 @@ class InteractiveTemperaturePlot:
     def export_data(self):
         print("Exporting data...")
         
-        config = Config(self.igraph)
-        default_path = config.get("export_path")
+        default_path = self.config.get("export_path")
         
         db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, default_path)
 

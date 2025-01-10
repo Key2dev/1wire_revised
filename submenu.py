@@ -8,7 +8,7 @@ from configuration import Config
 
 
 class Submenu:
-    def __init__(self, parent, db_path, table_name, title="Submenu", temp_range=(0, 50)):  # Added db_path and table_name as parameters to the constructor.
+    def __init__(self, parent, title="Submenu"):
         # Create a new Toplevel window
         self.window = tk.Toplevel(parent)
         self.window.title(title)
@@ -17,12 +17,12 @@ class Submenu:
         self.config = Config(self.window)
         
         # Create a database connection
-        self.db_path = db_path
-        self.table_name = table_name
-        self.temp_range = temp_range
+        self.db_path = self.config.get("db_path")
+        self.table_name = self.config.get("table_name")
+        self.temp_range = self.config.get("temperature_range")
         
         # Fetch min and max dates from the database
-        self.min_date, _ = db_functions.get_date_range(db_path, table_name)
+        self.min_date, _ = db_functions.get_date_range(self.db_path, self.table_name)
         
         # Set max_date to today
         self.max_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -155,7 +155,7 @@ class Submenu:
         print(f"Generating graph for dates: {start_date} to {end_date}")
         
         # Open the graph window and pass the fetched data
-        InteractiveTemperaturePlot(self.window, self.db_path, self.table_name, start_date, end_date, temp_range=self.temp_range)
+        InteractiveTemperaturePlot(self.window, start_date, end_date)
 
 
     def save_filtered_to_csv(self):

@@ -45,10 +45,11 @@ class WireReaderApp:
         self.data_temp3 = 0.0
 
         # Store historical data for the graph
-        max_points = self.config.get("graph_points")
-        self.temps1 = deque(maxlen=max_points)
-        self.temps2 = deque(maxlen=max_points)
-        self.temps3 = deque(maxlen=max_points)
+        self.max_points = self.config.get("graph_points")
+        
+        self.temps1 = deque(maxlen=self.max_points)
+        self.temps2 = deque(maxlen=self.max_points)
+        self.temps3 = deque(maxlen=self.max_points)
 
         # Label Variables for UI
         self.time_now = tk.StringVar()
@@ -101,7 +102,7 @@ class WireReaderApp:
         self.ax.set_ylim(temp_range[0], temp_range[1])
         self.ax.legend()
         self.ax.set_title("Live Temperature Plot")
-        self.ax.set_xlabel("Time")
+        self.ax.set_xlabel(f"Last {self.max_points} records")
         self.ax.set_ylabel("Temperature (°C)")
 
         # Embed Matplotlib Figure in Tkinter
@@ -155,7 +156,7 @@ class WireReaderApp:
         # Update x-axis ticks and labels (using the index as labels)
         self.ax.xaxis.set_major_locator(plt.MultipleLocator(10))  # Major ticks every 10 data points
         self.ax.xaxis.set_minor_locator(plt.MultipleLocator(5))   # Minor ticks every 5 data points
-        self.ax.set_xlabel("Time in seconds")
+        self.ax.set_xlabel(f"Last {self.max_points} records")
 
         self.canvas.draw()
 
@@ -168,7 +169,7 @@ class WireReaderApp:
         # Implement a submenu for filtering data
         print("Opening Filter Submenu")
         
-        Submenu(self.root, self.db_path, self.table_name, temp_range=self.config.get("temperature_range"))
+        Submenu(self.root)
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")
