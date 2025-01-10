@@ -171,7 +171,7 @@ class Config:
         ttk.Button(frame, text="Save", command=save_changes).grid(column=0, row=row, pady=10)
         ttk.Button(frame, text="Reset to Default", command=reset_to_default).grid(column=1, row=row, pady=10)
 
-        def on_config_window_close(self):
+        def on_config_window_close():
             # Perform any necessary cleanup here
             self.save_config()  # Save configuration before closing
             self.config_window.destroy()
