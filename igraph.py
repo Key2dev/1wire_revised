@@ -478,7 +478,7 @@ class InteractiveTemperaturePlot:
     def export_data(self):
         print("Exporting data...")
         
-        config = Config()
+        config = Config(self.igraph)
         default_path = config.get("export_path")
         
         db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, default_path)

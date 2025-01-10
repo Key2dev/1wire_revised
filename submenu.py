@@ -4,6 +4,7 @@ from tkcalendar import DateEntry
 import db_functions
 from igraph import InteractiveTemperaturePlot
 import datetime
+from configuration import Config
 
 
 class Submenu:
@@ -13,6 +14,8 @@ class Submenu:
         self.window.title(title)
         self.window.geometry("400x400")  # Reduced size for a more compact layout
 
+        self.config = Config(self.window)
+        
         # Create a database connection
         self.db_path = db_path
         self.table_name = table_name
@@ -157,7 +160,12 @@ class Submenu:
 
     def save_filtered_to_csv(self):
         start_date, end_date = self.get_date_and_time()
-        db_functions.records_by_time_csv(self.db_path, self.table_name , start_date, end_date)
+        if isinstance(start_date, str):
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+        if isinstance(end_date, str):
+            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+        default_path = self.config.get("export_path")
+        db_functions.records_by_time_csv(self.db_path, self.table_name , start_date, end_date, default_path)
 
     def close_window(self):
         self.window.destroy()
