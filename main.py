@@ -13,8 +13,6 @@ import sys
 from wire_reader import read_1wire_sensors
 
 # # TODO:
-#     datetime unification %Y-%M-%D %H:%M:%S
-#     backup bazy danych w innych miejscach
 #     delete unused buttons/methods
 #     make documentation
 
