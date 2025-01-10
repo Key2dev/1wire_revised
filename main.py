@@ -13,7 +13,6 @@ import sys
 from wire_reader import read_1wire_sensors
 
 # # TODO:
-#   delete unused buttons/methods
 #   make documentation
 #   polish the ui (use more descriptive variable names, make UI elements more visually appealing)
 

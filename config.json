@@ -1,12 +1,12 @@
 {
     "db_path": "C:/Users/KarolK/Desktop/cosie/test5.db",
-    "table_name": "temps",
-    "update_interval": 1000,
-    "graph_points": 60,
+    "export_path": "C:/Users/KarolK/Desktop/cosie",
     "temperature_range": [
         0,
         50
     ],
-    "export_path": "C:/Users/KarolK/Desktop/cosie",
+    "table_name": "temps",
+    "update_interval": 1000,
+    "graph_points": 60,
     "debug_mode": true
 }
