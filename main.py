@@ -26,13 +26,14 @@ class WireReaderApp:
         This method sets up the main window, initializes variables for data storage and display,
         creates UI elements including labels and buttons, and sets up a live graph for temperature visualization.
         """
-        # Load configuration
-        self.config = Config()
 
         # Create a new Toplevel window
         self.root = tk.Tk()
         self.root.title("1Wire Reader")
 
+        # Load configuration
+        self.config = Config(self.root)
+        
         # Database Variables
         self.db_path = self.config.get("db_path")
         self.table_name = self.config.get("table_name")
@@ -113,7 +114,7 @@ class WireReaderApp:
         db_functions.insert_data_to_db(self.db_path, self.table_name, self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)
         self.update_labels()
         self.update_graph()
-        self.root.after(self.config.get("update_interval"), self.update_all)
+        self.update_job = self.root.after(self.config.get("update_interval"), self.update_all)
 
     def update_variables(self):
         self.data_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -172,13 +173,16 @@ class WireReaderApp:
     def exit_click(self):
         print("Exit clicked. Closing the application...")
         # Cancel any scheduled after callbacks
+        self.root.after_cancel(self.update_job)  # Cancel the scheduled update
         self.root.quit()  # Stop the main loop
         self.root.destroy()  # Free resources
+
     
     def configuration_menu(self):
         self.config.edit_config_ui()
 
     def run(self):
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_click)
         self.root.mainloop()
 
 def main():

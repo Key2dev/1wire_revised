@@ -7,7 +7,8 @@ from tkinter import filedialog
 import db_functions
 
 class Config:
-    def __init__(self):
+    def __init__(self, master):
+        self.master = master
         self.config_file = "config.json"
         self.original_default_config = {
             "db_path": "temperatury.db",
@@ -20,6 +21,7 @@ class Config:
         }
         self.default_config = self.original_default_config.copy()
         self.load_config()
+        self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def load_config(self):
         if os.path.exists(self.config_file):
@@ -41,10 +43,11 @@ class Config:
         self.save_config()
 
     def edit_config_ui(self):
-        root = tk.Toplevel()
-        root.title("Edit Configuration")
+        
+        self.config_window = tk.Toplevel(self.master)
+        self.config_window.title("Edit Configuration")
 
-        frame = ttk.Frame(root, padding="10")
+        frame = ttk.Frame(self.config_window, padding="10")
         frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
         row = 0
@@ -135,7 +138,8 @@ class Config:
             if key not in ["db_path", "export_path", "temperature_range"]:
                 entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
             row += 1
-
+            
+        
         def save_changes():
             for key, entry in entries.items():
                 if key == "temperature_range":
@@ -147,7 +151,7 @@ class Config:
                     value = entry.get()
                 self.default_config[key] = value  # Update the current config
             self.save_config()  # Save to file
-            root.destroy()
+            self.config_window.destroy()
 
 
         def reset_to_default():
@@ -167,17 +171,29 @@ class Config:
         ttk.Button(frame, text="Save", command=save_changes).grid(column=0, row=row, pady=10)
         ttk.Button(frame, text="Reset to Default", command=reset_to_default).grid(column=1, row=row, pady=10)
 
-        def on_closing():
-            root.quit()
-            root.destroy()
+        def on_config_window_close(self):
+            # Perform any necessary cleanup here
+            self.save_config()  # Save configuration before closing
+            self.config_window.destroy()
         
-        root.protocol("WM_DELETE_WINDOW", on_closing)
+        self.config_window.protocol("WM_DELETE_WINDOW", on_config_window_close)
         
-        root.mainloop()
+        self.config_window.mainloop()
         
+    def on_closing(self):
+        try:
+            # Perform any cleanup operations here
+            self.save_config()  # Save configuration before closing
+            self.master.destroy()
+        except Exception as e:
+            print(f"Error while closing configuration window: {e}")
+        finally:
+            self.master.quit()
+                
 
 
 # # Example usage / outside edit
-# if __name__ == "__main__":
-#     config = Config()
-#     config.edit_config_ui()
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = Config(root)
+    root.mainloop()

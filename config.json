@@ -1,7 +1,7 @@
 {
     "db_path": "temperatury.db",
     "table_name": "temps",
-    "update_interval": 1000,
+    "update_interval": 5000,
     "graph_points": 60,
     "temperature_range": [
         0,
