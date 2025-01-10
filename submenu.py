@@ -67,7 +67,9 @@ class Submenu:
         # Action Buttons
         button_frame = tk.Frame(main_frame, pady=10)
         button_frame.pack()
-        tk.Button(button_frame, text="Get Date and Time", command=self.get_date_and_time).pack(side="left", padx=5)
+        
+        # For debugging
+        #tk.Button(button_frame, text="Get Date and Time", command=self.get_date_and_time).pack(side="left", padx=5)
         tk.Button(button_frame, text="Save filtered", command=self.save_filtered_to_csv).pack(side="left", padx=5)
         tk.Button(button_frame, text="Generate graph", command=self.generate_graph).pack(side="left", padx=5)
         tk.Button(button_frame, text="Exit", command=self.close_window).pack(side="left", padx=5)

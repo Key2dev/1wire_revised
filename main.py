@@ -13,8 +13,9 @@ import sys
 from wire_reader import read_1wire_sensors
 
 # # TODO:
-#     delete unused buttons/methods
-#     make documentation
+#   delete unused buttons/methods
+#   make documentation
+#   polish the ui (use more descriptive variable names, make UI elements more visually appealing)
 
 
 class WireReaderApp:
@@ -79,18 +80,18 @@ class WireReaderApp:
         self.t3_label.pack(padx=10, pady=5)
 
         # Buttons
-        self.button1 = tk.Button(self.root, text="Export DB", font=('Arial', '12'), command=self.export_db)
+        self.button1 = tk.Button(self.root, text=" Export DB ", font=('Arial', '12'), command=self.export_db)
         self.button1.pack(padx=10, pady=10)
+
+        self.button3 = tk.Button(self.root, text=" Filter ", font=('Arial', '12'), command=self.open_submenu)
+        self.button3.pack(padx=10, pady=10)
+        
+        self.button4 = tk.Button(self.root, text=" Config ", font=('Arial', '12'), command=self.configuration_menu)
+        self.button4.pack(padx=10, pady=10)
 
         self.button2 = tk.Button(self.root, text="  Exit  ", font=('Arial', '12'), command=self.exit_click)
         self.button2.pack(padx=10, pady=10)
-
-        self.button3 = tk.Button(self.root, text="Filter", font=('Arial', '12'), command=self.open_submenu)
-        self.button3.pack(padx=10, pady=10)
         
-        self.button4 = tk.Button(self.root, text="Config", font=('Arial', '12'), command=self.configuration_menu)
-        self.button4.pack(padx=10, pady=10)
-
     def create_live_graph(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
         self.line, = self.ax.plot([], [], label="Temp1")
@@ -135,9 +136,9 @@ class WireReaderApp:
     def update_labels(self):
         # Update label variables with data values
         self.time_now.set(f"Date: {self.data_time}")
-        self.temp1.set(f"Temp1: {self.data_temp1}")
-        self.temp2.set(f"Temp2: {self.data_temp2}")
-        self.temp3.set(f"Temp3: {self.data_temp3}")
+        self.temp1.set(f"Temp 1: {self.data_temp1}")
+        self.temp2.set(f"Temp 2: {self.data_temp2}")
+        self.temp3.set(f"Temp 3: {self.data_temp3}")
 
     def update_graph(self):
         # Plot temperature data vs index (just using len() for index)
@@ -154,7 +155,7 @@ class WireReaderApp:
         # Update x-axis ticks and labels (using the index as labels)
         self.ax.xaxis.set_major_locator(plt.MultipleLocator(10))  # Major ticks every 10 data points
         self.ax.xaxis.set_minor_locator(plt.MultipleLocator(5))   # Minor ticks every 5 data points
-        self.ax.set_xlabel("Time")
+        self.ax.set_xlabel("Time in seconds")
 
         self.canvas.draw()
 
