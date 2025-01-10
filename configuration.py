@@ -45,44 +45,30 @@ class Config:
     def edit_config_ui(self):
         root = tk.Toplevel(self.master)
         root.title("Edit Configuration")
-
+    
         frame = ttk.Frame(root, padding="10")
         frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-
+    
         row = 0
         entries = {}
-
-        # Advanced settings checkbox
-        advanced_var = tk.BooleanVar(value=False)
-        advanced_check = ttk.Checkbutton(frame, text="Show Advanced Settings", variable=advanced_var)
-        advanced_check.grid(column=0, row=row, columnspan=2, sticky=tk.W, pady=5)
-        row += 1
-
+    
+        # Regular settings
+        regular_frame = ttk.Frame(frame)
+        regular_frame.grid(column=0, row=row, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+    
+        # Advanced settings
         advanced_frame = ttk.Frame(frame)
-        advanced_frame.grid(column=0, row=row, columnspan=3, sticky=(tk.W, tk.E), pady=5)
+        advanced_frame.grid(column=0, row=row+1, columnspan=3, sticky=(tk.W, tk.E), pady=5)
         advanced_frame.grid_remove()  # Initially hide the advanced frame
-
-        def toggle_advanced():
-            if advanced_var.get():
-                advanced_frame.grid()
-            else:
-                advanced_frame.grid_remove()
-
-        advanced_check.config(command=toggle_advanced)
-
-        for key, value in self.default_config.items():
-            if key in ["table_name", "update_interval", "graph_points", "debug_mode"]:
-                parent_frame = advanced_frame
-            else:
-                parent_frame = frame
-
+    
+        def create_config_entry(parent_frame, key, value, row):
             ttk.Label(parent_frame, text=key).grid(column=0, row=row, sticky=tk.W, pady=5)
-
+    
             if key in ["db_path", "export_path"]:
                 entry = ttk.Entry(parent_frame)
                 entry.insert(0, str(value))
                 entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
-
+    
                 def choose_path(path_type, entry_widget):
                     def inner_choose_path():
                         if path_type == "db_path":
@@ -100,9 +86,9 @@ class Config:
                             self.set(path_type, filename)
                             messagebox.showinfo("Success", f"{path_type.capitalize()} updated to: {filename}")
                     return inner_choose_path
-
+    
                 ttk.Button(parent_frame, text="Choose...", command=choose_path(key, entry)).grid(column=2, row=row, pady=5)
-
+    
                 if key == "db_path":
                     def create_new_db():
                         new_db_path = filedialog.asksaveasfilename(
@@ -117,33 +103,33 @@ class Config:
                                         os.remove(new_db_path)
                                     else:
                                         return
-
+    
                                 db_functions.create_db(new_db_path, self.default_config["table_name"])
-
+    
                                 # Update the entry widget
                                 entries["db_path"].delete(0, tk.END)
                                 entries["db_path"].insert(0, new_db_path)
                                 self.set("db_path", new_db_path)
-
+    
                                 messagebox.showinfo("Success", f"New database created and set as active at {new_db_path}")
                             except Exception as e:
                                 messagebox.showerror("Error", f"Failed to create new database: {str(e)}")
-
+    
                     ttk.Button(parent_frame, text="Create New DB", command=create_new_db).grid(column=3, row=row, pady=5)
-
+    
                 entries[key] = entry
-
+    
             elif key == "temperature_range":
                 frame_temp = ttk.Frame(parent_frame)
                 frame_temp.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
-
+    
                 min_temp = tk.IntVar(value=value[0])
                 max_temp = tk.IntVar(value=value[1])
-
+    
                 ttk.Spinbox(frame_temp, from_=-273, to=1000, textvariable=min_temp, width=5).pack(side=tk.LEFT, padx=(0, 5))
                 ttk.Label(frame_temp, text="-").pack(side=tk.LEFT, padx=5)
                 ttk.Spinbox(frame_temp, from_=-273, to=1000, textvariable=max_temp, width=5).pack(side=tk.LEFT, padx=(5, 0))
-
+    
                 entries[key] = (min_temp, max_temp)
             elif isinstance(value, bool):
                 var = tk.BooleanVar(value=value)
@@ -157,12 +143,38 @@ class Config:
                 entry = ttk.Entry(parent_frame)
                 entry.insert(0, str(value))
                 entries[key] = entry
-
+    
             if key not in ["db_path", "export_path", "temperature_range"]:
                 entry.grid(column=1, row=row, sticky=(tk.W, tk.E), pady=5)
-            row += 1
-            
-        
+    
+            return row + 1
+    
+        regular_row = 0
+        advanced_row = 0
+    
+        for key, value in self.default_config.items():
+            if key in ["table_name", "update_interval", "graph_points", "debug_mode"]:
+                advanced_row = create_config_entry(advanced_frame, key, value, advanced_row)
+            else:
+                regular_row = create_config_entry(regular_frame, key, value, regular_row)
+    
+        # Advanced settings checkbox
+        advanced_var = tk.BooleanVar(value=False)
+        advanced_check = ttk.Checkbutton(frame, text="Show Advanced Settings", variable=advanced_var)
+        advanced_check.grid(column=0, row=regular_row+1, columnspan=2, sticky=tk.W, pady=5)
+    
+        def toggle_advanced():
+            if advanced_var.get():
+                advanced_frame.grid()
+            else:
+                advanced_frame.grid_remove()
+    
+        advanced_check.config(command=toggle_advanced)
+    
+        # Save and Reset buttons
+        button_frame = ttk.Frame(frame)
+        button_frame.grid(column=0, row=regular_row+2, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+    
         def save_changes():
             for key, entry in entries.items():
                 if key == "temperature_range":
@@ -175,8 +187,7 @@ class Config:
                 self.default_config[key] = value  # Update the current config
             self.save_config()  # Save to file
             root.destroy()
-
-
+    
         def reset_to_default():
             for key, entry in entries.items():
                 default_value = self.original_default_config[key]
@@ -189,11 +200,10 @@ class Config:
                 else:
                     entry.delete(0, tk.END)
                     entry.insert(0, str(default_value))
-
-
-        ttk.Button(frame, text="Save", command=save_changes).grid(column=0, row=row, pady=10)
-        ttk.Button(frame, text="Reset to Default", command=reset_to_default).grid(column=1, row=row, pady=10)
-
+    
+        ttk.Button(button_frame, text="Save", command=save_changes).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Reset to Default", command=reset_to_default).pack(side=tk.LEFT, padx=5)
+    
         def on_config_window_close():
             # Perform any necessary cleanup here
             self.save_config()  # Save configuration before closing
@@ -202,7 +212,6 @@ class Config:
         root.protocol("WM_DELETE_WINDOW", on_config_window_close)
         
         root.mainloop()
-        
     def on_closing(self):
         try:
             # Perform any cleanup operations here
