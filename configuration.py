@@ -11,8 +11,8 @@ class Config:
         self.master = master
         self.config_file = "config.json"
         self.original_default_config = {
-            "db_path": "temperatury.db",
-            "export_path": "test_dbdump.csv",
+            "db_path": "sensor_database.db",
+            "export_path": ".\database_dump.csv",
             "temperature_range": [0, 50],
             "table_name": "temps",
             "update_interval": 1000,  # in milliseconds
@@ -222,11 +222,3 @@ class Config:
         finally:
             self.master.quit()
                 
-
-
-# # Example usage / outside edit
-# TODO: delete
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = Config(root)
-    root.mainloop()

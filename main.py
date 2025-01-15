@@ -15,6 +15,7 @@ from wire_reader import read_1wire_sensors
 # # TODO:
 #   make documentation
 #   polish the ui (use more descriptive variable names, make UI elements more visually appealing)
+#   maybe add functionality to fetch last n records from the database?
 
 
 class WireReaderApp:
@@ -43,6 +44,9 @@ class WireReaderApp:
         self.data_temp2 = 0.0
         self.data_temp3 = 0.0
 
+        # Bool for stopping the update loop
+        self.inserting_data = False
+        
         # Store historical data for the graph
         self.max_points = self.config.get("graph_points")
         
@@ -92,6 +96,9 @@ class WireReaderApp:
         self.button2 = tk.Button(self.root, text="  Exit  ", font=('Arial', '12'), command=self.exit_click)
         self.button2.pack(padx=10, pady=10)
         
+        self.toggle_insertion_button = tk.Button(self.root, text="Toggle data recording", font=('Arial', '12'), command=self.toggle_insertion)
+        self.toggle_insertion_button.pack(padx=10, pady=10)
+        
     def create_live_graph(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
         self.line, = self.ax.plot([], [], label="Temp1")
@@ -111,7 +118,8 @@ class WireReaderApp:
 
     def update_all(self):
         self.update_variables()
-        db_functions.insert_data_to_db(self.db_path, self.table_name, self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)
+        if self.inserting_data:
+            db_functions.insert_data_to_db(self.db_path, self.table_name, self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)
         self.update_labels()
         self.update_graph()
         self.update_job = self.root.after(self.config.get("update_interval"), self.update_all)
@@ -169,6 +177,16 @@ class WireReaderApp:
         print("Opening Filter Submenu")
         
         Submenu(self.root)
+        
+    def toggle_insertion(self):
+        self.inserting_data = not self.inserting_data
+        if self.inserting_data:
+            self.toggle_insertion_button.config(text="Stop Recording Data")
+            print("Data insertion started")
+        else:
+            self.toggle_insertion_button.config(text="Start Recording Data")
+            print("Data insertion stopped")
+
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")
