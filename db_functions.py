@@ -211,3 +211,4 @@ def get_date_range(database_name: str, table_name: str):
     conn.close()
     print(f"Data range: {min_date} to {max_date}")
     return min_date, max_date
+

@@ -5,6 +5,7 @@ from tkinter import ttk
 from tkinter import messagebox
 from tkinter import filedialog
 import db_functions
+import sqlite3
 
 class Config:
     def __init__(self, master):
@@ -21,6 +22,7 @@ class Config:
         }
         self.default_config = self.original_default_config.copy()
         self.load_config()
+        self.ensure_database_setup()
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def load_config(self):
@@ -30,6 +32,28 @@ class Config:
                 self.default_config.update(loaded_config)
         else:
             self.save_config()
+    
+    def ensure_database_setup(self):
+        db_path = self.get("db_path")
+        table_name = self.get("table_name")
+        if not os.path.exists(db_path):
+            if messagebox.askyesno("Database Not Found", f"The database file '{db_path}' does not exist. Would you like to create it?"):
+                db_functions.create_db(db_path, table_name)
+                messagebox.showinfo("Success", f"Database created at {db_path}")
+            else:
+                messagebox.showwarning("Warning", "The application may not function correctly without a valid database.")
+        else:
+            # Check if the table exists
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'")
+            if not cursor.fetchone():
+                if messagebox.askyesno("Table Not Found", f"The table '{table_name}' does not exist in the database. Would you like to create it?"):
+                    db_functions.create_db(db_path, table_name)
+                    messagebox.showinfo("Success", f"Table '{table_name}' created in the database.")
+                else:
+                    messagebox.showwarning("Warning", "The application may not function correctly without the required table.")
+            conn.close()
 
     def save_config(self):
         with open(self.config_file, 'w') as f:
@@ -41,6 +65,8 @@ class Config:
     def set(self, key, value):
         self.default_config[key] = value
         self.save_config()
+        if key == "db_path":
+            self.ensure_database_setup()
 
     def edit_config_ui(self):
         root = tk.Toplevel(self.master)
