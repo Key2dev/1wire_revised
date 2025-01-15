@@ -486,22 +486,6 @@ class InteractiveTemperaturePlot:
         db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, default_path)
 
         
-# TODO: this is for debugging, remove later
-def main():
-    root = tk.Tk()
-    root.title("Main Application Window")
-
-    # Example button to launch the subwindow
-    def open_plot_window():
-        InteractiveTemperaturePlot(root, "temperatury.db", "temps", "2024-11-26 11:40:00", "2024-12-04 11:55:00")
-
-    open_button = tk.Button(root, text="Open Interactive Plot", command=open_plot_window)
-    open_button.pack(padx=20, pady=20)
-
-    root.mainloop()
-
-if __name__ == "__main__":
-    main()
     
     
     
