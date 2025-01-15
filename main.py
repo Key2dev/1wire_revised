@@ -6,18 +6,16 @@ import debug_functions as debugf
 import db_functions
 import datetime
 from submenu import Submenu
+from configuration import Config
+import sys
 
 # Old reader implementation
 from wire_reader import read_1wire_sensors
 
-# TODO:
-"""
-    checkboxy na osobne czujniki w igraphie
-    średnia dla 3 czujników
-    datetime unification %Y-%M-%D %H:%M:%S
-    backup bazy danych w innych miejscach
-    refresh na 5s
-    """
+# # TODO:
+#   make documentation
+#   polish the ui (use more descriptive variable names, make UI elements more visually appealing)
+
 
 class WireReaderApp:
     def __init__(self):
@@ -26,40 +24,18 @@ class WireReaderApp:
 
         This method sets up the main window, initializes variables for data storage and display,
         creates UI elements including labels and buttons, and sets up a live graph for temperature visualization.
-
-        Attributes:
-            usedebug (bool): Flag to enable debug mode.
-            root (tk.Tk): The main Tkinter window.
-            db_path (str): Path to the SQLite database file.
-            table_name (str): Name of the table in the database.
-            data_time (str): Current timestamp.
-            data_temp1 (float): Temperature reading from sensor 1.
-            data_temp2 (float): Temperature reading from sensor 2.
-            data_temp3 (float): Temperature reading from sensor 3.
-            temps1 (deque): Circular buffer for storing historical temperature data from sensor 1.
-            temps2 (deque): Circular buffer for storing historical temperature data from sensor 2.
-            temps3 (deque): Circular buffer for storing historical temperature data from sensor 3.
-            time_now (tk.StringVar): StringVar for displaying current time in UI.
-            temp1 (tk.StringVar): StringVar for displaying temperature 1 in UI.
-            temp2 (tk.StringVar): StringVar for displaying temperature 2 in UI.
-            temp3 (tk.StringVar): StringVar for displaying temperature 3 in UI.
-            fig (matplotlib.figure.Figure): Matplotlib figure for the live graph.
-            ax (matplotlib.axes.Axes): Axes for the live graph.
-            canvas (FigureCanvasTkAgg): Tkinter canvas for embedding the Matplotlib figure.
-
-        Returns:
-            None
         """
-        #TODO: debug variables
-        self.usedebug = True
 
         # Create a new Toplevel window
         self.root = tk.Tk()
         self.root.title("1Wire Reader")
 
+        # Load configuration
+        self.config = Config(self.root)
+        
         # Database Variables
-        self.db_path = "temperatury.db"
-        self.table_name = "temps"
+        self.db_path = self.config.get("db_path")
+        self.table_name = self.config.get("table_name")
 
         # Data Variables
         self.data_time = ""
@@ -68,9 +44,11 @@ class WireReaderApp:
         self.data_temp3 = 0.0
 
         # Store historical data for the graph
-        self.temps1 = deque(maxlen=60)
-        self.temps2 = deque(maxlen=60)
-        self.temps3 = deque(maxlen=60)
+        self.max_points = self.config.get("graph_points")
+        
+        self.temps1 = deque(maxlen=self.max_points)
+        self.temps2 = deque(maxlen=self.max_points)
+        self.temps3 = deque(maxlen=self.max_points)
 
         # Label Variables for UI
         self.time_now = tk.StringVar()
@@ -78,6 +56,16 @@ class WireReaderApp:
         self.temp2 = tk.StringVar()
         self.temp3 = tk.StringVar()
 
+        # Create UI elements (labels, buttons, etc.)
+        self.create_ui_elements()
+
+        # Live Graph
+        self.create_live_graph()
+
+        # Start updating the GUI
+        self.update_all()
+
+    def create_ui_elements(self):
         # Labels for displaying in the UI
         self.time_label = tk.Label(self.root, textvariable=self.time_now, font=('Arial', '14'))
         self.time_label.pack(padx=10, pady=5)
@@ -92,24 +80,28 @@ class WireReaderApp:
         self.t3_label.pack(padx=10, pady=5)
 
         # Buttons
-        self.button1 = tk.Button(self.root, text="Export DB", font=('Arial', '12'), command=self.export_db)
+        self.button1 = tk.Button(self.root, text=" Export DB ", font=('Arial', '12'), command=self.export_db)
         self.button1.pack(padx=10, pady=10)
+
+        self.button3 = tk.Button(self.root, text=" Filter ", font=('Arial', '12'), command=self.open_submenu)
+        self.button3.pack(padx=10, pady=10)
+        
+        self.button4 = tk.Button(self.root, text=" Config ", font=('Arial', '12'), command=self.configuration_menu)
+        self.button4.pack(padx=10, pady=10)
 
         self.button2 = tk.Button(self.root, text="  Exit  ", font=('Arial', '12'), command=self.exit_click)
         self.button2.pack(padx=10, pady=10)
-
-        self.button3 = tk.Button(self.root, text="Filter", font=('Arial', '12'), command=self.open_submenu)
-        self.button3.pack(padx=10, pady=10)
-
-        # Live Graph
+        
+    def create_live_graph(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
         self.line, = self.ax.plot([], [], label="Temp1")
         self.line2, = self.ax.plot([], [], label="Temp2", color='r')
         self.line3, = self.ax.plot([], [], label="Temp3", color='g')
-        self.ax.set_ylim(0, 50)  # Temperature range
+        temp_range = self.config.get("temperature_range")
+        self.ax.set_ylim(temp_range[0], temp_range[1])
         self.ax.legend()
         self.ax.set_title("Live Temperature Plot")
-        self.ax.set_xlabel("Index")
+        self.ax.set_xlabel(f"Last {self.max_points} records")
         self.ax.set_ylabel("Temperature (°C)")
 
         # Embed Matplotlib Figure in Tkinter
@@ -117,46 +109,36 @@ class WireReaderApp:
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(padx=10, pady=10)
 
-        # Start updating the GUI
-        self.update_all()
-
-
     def update_all(self):
-        self.update_variables()  # Updates the actual data
-        db_functions.insert_data_to_db(self.db_path, self.table_name, self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)  # Insert data into DB
-        self.update_labels()      # Updates the displayable labels in the UI
-        self.update_graph()       # Updates the graph with new data
-        self.root.after(1000, self.update_all)  # Update every second
+        self.update_variables()
+        db_functions.insert_data_to_db(self.db_path, self.table_name, self.data_time, self.data_temp1, self.data_temp2, self.data_temp3)
+        self.update_labels()
+        self.update_graph()
+        self.update_job = self.root.after(self.config.get("update_interval"), self.update_all)
 
     def update_variables(self):
-        # Update data variables
         self.data_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Sensor Data Variables
-        # TODO: delete this line and fix the next lines when actual sensor data reading is implemented
-        if self.usedebug:
-            # Using debug_functions to generate random temperatures for testing purposes
+        if self.config.get("debug_mode"):
             self.data_temp1 = debugf.random_temp()
             self.data_temp2 = debugf.random_temp()
             self.data_temp3 = debugf.random_temp()
         else:
-            # Using actual sensor data reading here
             temps = read_1wire_sensors()
             self.data_temp1 = temps[0]
             self.data_temp2 = temps[1]
             self.data_temp3 = temps[2]
         
-        # Store historical data (just append new temperatures)
         self.temps1.append(self.data_temp1)
         self.temps2.append(self.data_temp2)
         self.temps3.append(self.data_temp3)
-
+        
     def update_labels(self):
         # Update label variables with data values
         self.time_now.set(f"Date: {self.data_time}")
-        self.temp1.set(f"Temp1: {self.data_temp1}")
-        self.temp2.set(f"Temp2: {self.data_temp2}")
-        self.temp3.set(f"Temp3: {self.data_temp3}")
+        self.temp1.set(f"Temp 1: {self.data_temp1}")
+        self.temp2.set(f"Temp 2: {self.data_temp2}")
+        self.temp3.set(f"Temp 3: {self.data_temp3}")
 
     def update_graph(self):
         # Plot temperature data vs index (just using len() for index)
@@ -173,34 +155,73 @@ class WireReaderApp:
         # Update x-axis ticks and labels (using the index as labels)
         self.ax.xaxis.set_major_locator(plt.MultipleLocator(10))  # Major ticks every 10 data points
         self.ax.xaxis.set_minor_locator(plt.MultipleLocator(5))   # Minor ticks every 5 data points
-        self.ax.set_xlabel("Index")
+        self.ax.set_xlabel(f"Last {self.max_points} records")
 
         self.canvas.draw()
 
     def export_db(self):
-        # TODO: this is dumping the while data to a csv file ?remove?
         print("Export DataBase to csv file")
-        # DB dump to csv file
-        db_functions.export_to_csv(self.db_path, self.table_name, "test_dbdump.csv")
+        db_functions.export_to_csv(self.db_path, self.table_name, self.config.get("export_path"))
+
         
     def open_submenu(self):
         # Implement a submenu for filtering data
         print("Opening Filter Submenu")
         
-        Submenu(self.root, self.db_path, self.table_name)
+        Submenu(self.root)
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")
+        self.close_application()
+
+    def close_application(self):
+        print("Closing application...")
         # Cancel any scheduled after callbacks
+        if hasattr(self, 'update_job'):
+            self.root.after_cancel(self.update_job)  # Cancel the scheduled update
+
+        # Close all top-level windows
+        for window in self.root.winfo_children():
+            if isinstance(window, tk.Toplevel):
+                window.destroy()
+
+        # Close the matplotlib figure
+        plt.close(self.fig)
+
+        # Destroy all widgets
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        # Stop the main loop and destroy the root window
+        self.root.quit()
+        self.root.destroy()
+
+        # Force exit the Python interpreter
+        sys.exit(0)
+
         self.root.quit()  # Stop the main loop
         self.root.destroy()  # Free resources
 
+
+    
+    def configuration_menu(self):
+        self.config.edit_config_ui()
+
     def run(self):
-        self.root.mainloop()
+        self.root.protocol("WM_DELETE_WINDOW", self.close_application)
+        try:
+            self.root.mainloop()
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            self.close_application()
 
 def main():
     app = WireReaderApp()
-    app.run()
+    try:
+        app.run()
+    except Exception as e:
+        print(f"An unhandled exception occurred: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()

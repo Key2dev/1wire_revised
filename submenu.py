@@ -4,21 +4,29 @@ from tkcalendar import DateEntry
 import db_functions
 from igraph import InteractiveTemperaturePlot
 import datetime
+from configuration import Config
 
 
 class Submenu:
-    def __init__(self, parent, db_path, table_name, title="Submenu"):  # Added db_path and table_name as parameters to the constructor.
+    def __init__(self, parent, title="Submenu"):
         # Create a new Toplevel window
         self.window = tk.Toplevel(parent)
         self.window.title(title)
         self.window.geometry("400x400")  # Reduced size for a more compact layout
 
+        self.config = Config(self.window)
+        
         # Create a database connection
-        self.db_path = db_path
-        self.table_name = table_name
+        self.db_path = self.config.get("db_path")
+        self.table_name = self.config.get("table_name")
+        self.temp_range = self.config.get("temperature_range")
         
         # Fetch min and max dates from the database
-        self.min_date, self.max_date = db_functions.get_date_range(db_path, table_name)
+        self.min_date, _ = db_functions.get_date_range(self.db_path, self.table_name)
+        
+        # Set max_date to today
+        self.max_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
 
         # Parse the date strings to datetime objects
         self.min_date = self.parse_date(self.min_date)
@@ -62,7 +70,9 @@ class Submenu:
         # Action Buttons
         button_frame = tk.Frame(main_frame, pady=10)
         button_frame.pack()
-        tk.Button(button_frame, text="Get Date and Time", command=self.get_date_and_time).pack(side="left", padx=5)
+        
+        # For debugging
+        #tk.Button(button_frame, text="Get Date and Time", command=self.get_date_and_time).pack(side="left", padx=5)
         tk.Button(button_frame, text="Save filtered", command=self.save_filtered_to_csv).pack(side="left", padx=5)
         tk.Button(button_frame, text="Generate graph", command=self.generate_graph).pack(side="left", padx=5)
         tk.Button(button_frame, text="Exit", command=self.close_window).pack(side="left", padx=5)
@@ -71,7 +81,19 @@ class Submenu:
         # Update the DateEntry widgets with the valid date range
         self.start_date_entry.set_date(self.min_date.date())
         self.end_date_entry.set_date(self.max_date.date())
-
+        
+        # Set the time spinboxes to the earliest and latest times
+        self.start_hour_spinbox.delete(0, tk.END)
+        self.start_hour_spinbox.insert(0, f"{self.min_date.hour:02d}")
+        
+        self.start_minute_spinbox.delete(0, tk.END)
+        self.start_minute_spinbox.insert(0, f"{self.min_date.minute:02d}")
+        
+        self.hour_spinbox.delete(0, tk.END)
+        self.hour_spinbox.insert(0, f"{self.max_date.hour:02d}")
+        
+        self.minute_spinbox.delete(0, tk.END)
+        self.minute_spinbox.insert(0, f"{self.max_date.minute:02d}")
     
     def parse_date(self, date_string):
         # Try parsing with YYYY-MM-DD format first
@@ -133,12 +155,17 @@ class Submenu:
         print(f"Generating graph for dates: {start_date} to {end_date}")
         
         # Open the graph window and pass the fetched data
-        InteractiveTemperaturePlot(self.window, self.db_path, self.table_name, start_date, end_date)
+        InteractiveTemperaturePlot(self.window, start_date, end_date)
 
 
     def save_filtered_to_csv(self):
         start_date, end_date = self.get_date_and_time()
-        db_functions.records_by_time_csv(self.db_path, self.table_name , start_date, end_date)
+        if isinstance(start_date, str):
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+        if isinstance(end_date, str):
+            end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
+        default_path = self.config.get("export_path")
+        db_functions.records_by_time_csv(self.db_path, self.table_name , start_date, end_date, default_path)
 
     def close_window(self):
         self.window.destroy()

@@ -8,47 +8,66 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import tkinter.simpledialog
 import numpy as np
 from matplotlib.lines import Line2D
+from configuration import Config
 
 class InteractiveTemperaturePlot:
-    def __init__(self, parent, db_path, table_name, start_time, end_time):
+    def __init__(self, parent, start_time, end_time):
         self.igraph = tk.Toplevel(parent)
-        self.igraph.title("Interactive Temperature Plot")
-        self.igraph.geometry("1200x800")  # Increased window size to accommodate table
+        self.igraph.title(f"Temperature Plot {start_time} to {end_time}")
+        self.igraph.geometry("1200x600")
+        
+        self.config = Config(self.igraph)
 
-        self.db_path = db_path
-        self.table_name = table_name
+        self.db_path = self.config.get("db_path")
+        self.table_name = self.config.get("table_name")
+        self.temp_range = self.config.get("temperature_range")
+        
         self.start_time = start_time
         self.end_time = end_time
+        
 
-        # Main frame to organize plot and table
+        # Create main frame
         self.main_frame = tk.Frame(self.igraph)
         self.main_frame.pack(fill=tk.BOTH, expand=1)
 
-        # Frame for plot
+        # Create plot frame
         self.plot_frame = tk.Frame(self.main_frame)
         self.plot_frame.pack(fill=tk.BOTH, expand=1)
+        
+        if isinstance(start_time, str):
+            self.start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S")
+        if isinstance(end_time, str):
+            self.end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S")
+
 
         # Fetch and prepare data
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] for row in self.dataset]
-        self.temperatures2 = [row[3] for row in self.dataset]
-        self.temperatures3 = [row[4] for row in self.dataset]
-        self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
+        self.temperatures = [float(row[2]) for row in self.dataset]
+        self.temperatures2 = [float(row[3]) for row in self.dataset]
+        self.temperatures3 = [float(row[4]) for row in self.dataset]
+        self.avg_temp = [float(row[5]) for row in self.dataset]
+        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
+
+
+        # Initialize checkbox variables
+        self.temp1_var = tk.BooleanVar(value=True)
+        self.temp2_var = tk.BooleanVar(value=True)
+        self.temp3_var = tk.BooleanVar(value=True)
+        self.avg_temp_var = tk.BooleanVar(value=True)
+        self.show_comments_var = tk.BooleanVar()
 
         # Initialize the plot
         self.fig, self.ax = plt.subplots(figsize=(10, 4))
         self.init_plot()
-        self.init_pick_event()
 
         # Embed the plot in the Tkinter window
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.plot_frame)
         self.canvas.draw()
 
-        # Annotation on hover
+   
+        self.init_pick_event()
         self.init_annotation()
-
-        # Connect the hover event
         self.init_hover_event()
 
         # Add the matplotlib toolbar
@@ -56,6 +75,13 @@ class InteractiveTemperaturePlot:
         self.toolbar.update()
         self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+        # Create control frame and add controls
+        self.create_control_frame()
+
+        # Create Treeview for data table
+        self.create_data_table()
+
+    def create_control_frame(self):
         # Frame for buttons and controls
         self.control_frame = tk.Frame(self.main_frame)
         self.control_frame.pack(fill=tk.BOTH, expand=0.6)
@@ -65,11 +91,32 @@ class InteractiveTemperaturePlot:
         self.button1.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Add checkbox for showing comments
-        self.show_comments_var = tk.BooleanVar()
         self.show_comments_checkbox = tk.Checkbutton(self.control_frame, text="Show Comments", 
                                                      variable=self.show_comments_var, 
                                                      command=self.toggle_comments)
         self.show_comments_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        # Add checkboxes for showing/hiding temperature lines
+        self.temp1_checkbox = tk.Checkbutton(self.control_frame, text="Show Temp 1", 
+                                             variable=self.temp1_var, 
+                                             command=self.toggle_temp_lines)
+        self.temp1_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.temp2_checkbox = tk.Checkbutton(self.control_frame, text="Show Temp 2", 
+                                             variable=self.temp2_var, 
+                                             command=self.toggle_temp_lines)
+        self.temp2_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.temp3_checkbox = tk.Checkbutton(self.control_frame, text="Show Temp 3", 
+                                             variable=self.temp3_var, 
+                                             command=self.toggle_temp_lines)
+        self.temp3_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+        
+        self.avg_temp_checkbox = tk.Checkbutton(self.control_frame, text="Show Avg Temp", 
+                                            variable=self.avg_temp_var, 
+                                            command=self.toggle_temp_lines)
+        self.avg_temp_checkbox.pack(side=tk.LEFT, padx=10, pady=10)
+    
 
         # Add button to update comments
         self.update_comment_button = tk.Button(self.control_frame, text="Update Comment", font=('Arial', '12'), command=self.update_comment)
@@ -78,8 +125,6 @@ class InteractiveTemperaturePlot:
         self.exitbutton = tk.Button(self.control_frame, text="Exit", font=('Arial', '12'), command=self.close_window)
         self.exitbutton.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        # Create Treeview for data table
-        self.create_data_table()
         
     def init_annotation(self):
         self.annotation = self.ax.annotate(
@@ -101,10 +146,9 @@ class InteractiveTemperaturePlot:
         self.table_scrollbar = tk.Scrollbar(self.table_frame)
         self.table_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Create Treeview
         self.data_table = ttk.Treeview(
             self.table_frame, 
-            columns=('Timestamp', 'Temp1', 'Temp2', 'Temp3', 'Comment'), 
+            columns=('Timestamp', 'Temp1', 'Temp2', 'Temp3', 'AvgTemp', 'Comment'), 
             show='headings', 
             yscrollcommand=self.table_scrollbar.set
         )
@@ -114,6 +158,7 @@ class InteractiveTemperaturePlot:
         self.data_table.heading('Temp1', text='Temp 1')
         self.data_table.heading('Temp2', text='Temp 2')
         self.data_table.heading('Temp3', text='Temp 3')
+        self.data_table.heading('AvgTemp', text='Avg Temp')
         self.data_table.heading('Comment', text='Comment')
 
         # Define column widths
@@ -121,15 +166,17 @@ class InteractiveTemperaturePlot:
         self.data_table.column('Temp1', width=100, anchor='center')
         self.data_table.column('Temp2', width=100, anchor='center')
         self.data_table.column('Temp3', width=100, anchor='center')
+        self.data_table.column('AvgTemp', width=100, anchor='center')
         self.data_table.column('Comment', width=300, anchor='w')
 
         # Populate the table
         for i in range(len(self.timestamps)):
             self.data_table.insert('', 'end', values=(
                 self.timestamps[i].strftime('%Y-%m-%d %H:%M:%S'),
-                f'{self.temperatures[i]:.2f}',
-                f'{self.temperatures2[i]:.2f}', 
-                f'{self.temperatures3[i]:.2f}',
+                f'{float(self.temperatures[i]):.2f}',
+                f'{float(self.temperatures2[i]):.2f}', 
+                f'{float(self.temperatures3[i]):.2f}',
+                f'{float(self.avg_temp[i]):.2f}',
                 self.comments[i]
             ))
 
@@ -141,24 +188,29 @@ class InteractiveTemperaturePlot:
         
         # Bind selection event:
         self.data_table.bind("<ButtonRelease-1>", self.on_table_select)
-
-
+    
     def init_plot(self):
         self.line1, = self.ax.plot(self.timestamps, self.temperatures, c='blue', label="Temp 1", marker='o', linestyle='-', picker=5, markersize=4)
         self.line2, = self.ax.plot(self.timestamps, self.temperatures2, c='red', label="Temp 2", marker='o', linestyle='-', picker=5, markersize=4)
         self.line3, = self.ax.plot(self.timestamps, self.temperatures3, c='green', label="Temp 3", marker='o', linestyle='-', picker=5, markersize=4)
+        self.line_avg, = self.ax.plot(self.timestamps, self.avg_temp, c='purple', label="Avg Temp", linestyle='--', linewidth=2)
 
         self.ax.set_xlabel("Time")
         self.ax.set_ylabel("Temperature")
-        self.ax.set_title("Interactive Temperature Plot")
+        self.ax.set_title(f"Temperature Plot {self.start_time} to {self.end_time}")
         self.ax.legend()
 
-        # Set y-range from 0 to 50
-        self.ax.set_ylim(0, 50)
+        # Set y-range to temp_range
+        self.ax.set_ylim(self.temp_range)
+
+        # Set y-axis ticks to integers
+        self.ax.yaxis.set_major_locator(plt.MultipleLocator(5))
+        self.ax.yaxis.set_minor_locator(plt.MultipleLocator(1))
         # Format x-axis as date
         self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M:%S'))
         self.ax.xaxis.set_major_locator(mdates.AutoDateLocator())
-        self.fig.autofmt_xdate()  # Auto-rotate date labels for readability
+        
+        plt.gcf().autofmt_xdate()  # Auto-rotate date labels for readability
 
         # Initialize comment annotations (hidden by default)
         self.comment_annotations = []
@@ -167,6 +219,7 @@ class InteractiveTemperaturePlot:
         self.selected_scatter1 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp1")
         self.selected_scatter2 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp2")
         self.selected_scatter3 = self.ax.scatter([], [], c='yellow', s=100, zorder=5, label="Selected Temp3")
+
 
 
     def init_pick_event(self):
@@ -220,6 +273,7 @@ class InteractiveTemperaturePlot:
                 text += f"Temp 1: {self.temperatures[i]:.2f}\n"
                 text += f"Temp 2: {self.temperatures2[i]:.2f}\n"
                 text += f"Temp 3: {self.temperatures3[i]:.2f}\n"
+                text += f"Avg Temp: {self.avg_temp[i]:.2f}\n"
                 if self.comments[i]:
                     text += f"Comment: {self.comments[i]}"
                 self.annotation.set_text(text)
@@ -241,7 +295,8 @@ class InteractiveTemperaturePlot:
         if event.inaxes == self.ax:
             for line, temps in [(self.line1, self.temperatures),
                                 (self.line2, self.temperatures2),
-                                (self.line3, self.temperatures3)]:
+                                (self.line3, self.temperatures3),
+                                (self.line_avg, self.avg_temp)]:
                 cont, ind = line.contains(event)
                 if cont:
                     i = ind["ind"][0]  # Get the index of the nearest point
@@ -251,6 +306,7 @@ class InteractiveTemperaturePlot:
                     text += f"Temp 1: {self.temperatures[i]:.2f}\n"
                     text += f"Temp 2: {self.temperatures2[i]:.2f}\n"
                     text += f"Temp 3: {self.temperatures3[i]:.2f}\n"
+                    text += f"Avg Temp: {self.avg_temp[i]:.2f}\n"
                     if self.comments[i]:
                         text += f"Comment: {self.comments[i]}"
                     self.annotation.set_text(text)
@@ -266,11 +322,52 @@ class InteractiveTemperaturePlot:
             self.fig.canvas.draw_idle()
 
 
+
     def find_nearest_point(self, x, y, line):
         xdata = mdates.date2num(self.timestamps)
         ydata = line.get_ydata()
         distances = np.sqrt((xdata - x)**2 + (ydata - y)**2)
         return np.argmin(distances)
+    
+    
+    def refresh_data(self):
+        # Re-fetch data and update plot and table
+        self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
+        self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
+        self.temperatures = [row[2] for row in self.dataset]
+        self.temperatures2 = [row[3] for row in self.dataset]
+        self.temperatures3 = [row[4] for row in self.dataset]
+        self.avg_temperatures = [row[5] for row in self.dataset]  # Assuming avg_temp is the 6th column
+        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
+
+        # Clear and repopulate the table
+        for item in self.data_table.get_children():
+            self.data_table.delete(item)
+        for i in range(len(self.timestamps)):
+            self.data_table.insert('', 'end', values=(
+                self.timestamps[i].strftime('%Y-%m-%d %H:%M:%S'),
+                f'{self.temperatures[i]:.2f}',
+                f'{self.temperatures2[i]:.2f}', 
+                f'{self.temperatures3[i]:.2f}',
+                f'{self.avg_temperatures[i]:.2f}',
+                self.comments[i]
+            ))
+
+        # Redraw the plot
+        self.ax.clear()
+        self.init_plot()
+        
+        self.ax.set_ylim(self.temp_range)
+
+        # Recreate the annotation object
+        self.init_annotation()
+
+        # Disconnect previous events
+        if hasattr(self, 'hover_connection'):
+            self.fig.canvas.mpl_disconnect(self.hover_connection)
+
+        # Reconnect hover event
+        self.init_hover_event()
     
     # Comment checkbox logic
     def toggle_comments(self):
@@ -280,6 +377,14 @@ class InteractiveTemperaturePlot:
         else:
             self.remove_comments()
         self.fig.canvas.draw_idle()
+        
+    def toggle_temp_lines(self):
+        self.line1.set_visible(self.temp1_var.get())
+        self.line2.set_visible(self.temp2_var.get())
+        self.line3.set_visible(self.temp3_var.get())
+        self.line_avg.set_visible(self.avg_temp_var.get())
+        self.canvas.draw_idle()
+
 
     def display_comments(self):
         print("Displaying comments...")  # Debug print
@@ -314,7 +419,7 @@ class InteractiveTemperaturePlot:
         if selected_item:
             item = self.data_table.item(selected_item)
             timestamp = item['values'][0]
-            comment = item['values'][4]
+            comment = item['values'][5]
             new_comment = tk.simpledialog.askstring("Update Comment", "Enter new comment:", initialvalue=comment)
             if new_comment is not None:
                 db_functions.add_comment(self.db_path, self.table_name, timestamp, new_comment)
@@ -326,10 +431,11 @@ class InteractiveTemperaturePlot:
         # Re-fetch data and update plot and table
         self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
         self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] + 1 for row in self.dataset]
-        self.temperatures2 = [row[3] + 3 for row in self.dataset]
-        self.temperatures3 = [row[4] + 5 for row in self.dataset]
-        self.comments = [row[5] if len(row) > 5 else '' for row in self.dataset]
+        self.temperatures = [float(row[2]) for row in self.dataset]
+        self.temperatures2 = [float(row[3]) for row in self.dataset]
+        self.temperatures3 = [float(row[4]) for row in self.dataset]
+        self.avg_temperatures = [float(row[5]) for row in self.dataset]  # Assuming avg_temp is the 6th column
+        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
     
         # Clear and repopulate the table
         for item in self.data_table.get_children():
@@ -342,10 +448,11 @@ class InteractiveTemperaturePlot:
                 f'{self.temperatures3[i]:.2f}',
                 self.comments[i]
             ))
-    
+        
         # Redraw the plot
         self.ax.clear()
         self.init_plot()
+        
     
         # Recreate the annotation object
         self.init_annotation()
@@ -363,16 +470,21 @@ class InteractiveTemperaturePlot:
     
         print("Data refreshed and hover event reconnected")  # Debug print
         
+        # Restore visibility state
+        self.toggle_temp_lines()
+        
         
     def close_window(self):
         self.igraph.destroy()
 
     # Button functions
     def export_data(self):
-        # TODO: add some functionality to determine filepath - done in db_functions.py
         print("Exporting data...")
-        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time)
         
+        default_path = self.config.get("export_path")
+        
+        db_functions.records_by_time_csv(self.db_path, self.table_name, self.start_time, self.end_time, default_path)
+
         
 # TODO: this is for debugging, remove later
 def main():
