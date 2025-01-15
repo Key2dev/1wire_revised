@@ -68,14 +68,22 @@ class Submenu:
         self.minute_spinbox.pack(side="left", padx=2)
 
         # Action Buttons
-        button_frame = tk.Frame(main_frame, pady=10)
-        button_frame.pack()
-        
-        tk.Button(button_frame, text="Save filtered", command=self.save_filtered_to_csv).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Generate graph from dates", command=self.generate_graph).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Generate graph from last n records", command=self.generate_n_graph).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Exit", command=self.close_window).pack(side="left", padx=5)
+        button_frame = tk.LabelFrame(main_frame, text="Actions", pady=10, padx=10)
+        button_frame.pack(fill="x", pady=10)
 
+        # Create two rows of buttons
+        button_row1 = tk.Frame(button_frame)
+        button_row1.pack(fill="x", pady=5)
+        button_row2 = tk.Frame(button_frame)
+        button_row2.pack(fill="x", pady=5)
+
+        # First row of buttons
+        tk.Button(button_row1, text="Save filtered", command=self.save_filtered_to_csv, width=20).pack(side="left", padx=5)
+        tk.Button(button_row1, text="Generate graph from dates", command=self.generate_graph, width=20).pack(side="right", padx=5)
+
+        # Second row of buttons
+        tk.Button(button_row2, text="Graph last n records", command=self.generate_n_graph, width=20).pack(side="left", padx=5)
+        tk.Button(button_row2, text="Exit", command=self.close_window, width=20).pack(side="right", padx=5)
         
         # Update the DateEntry widgets with the valid date range
         self.start_date_entry.set_date(self.min_date.date())
