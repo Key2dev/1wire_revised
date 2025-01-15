@@ -70,16 +70,26 @@ def insert_data_to_db(database_name:str, table_name:str, date: str, t1: float, t
     
 def fetch_last_n_records(database, table_name, n):
     # Fetch the last n records from the database table order by id.
-    # Return as list of tuples ('data' as "YYYY-MM-DD HH:MM:SS", 't1', 't2', 't3', comment)
-    # TODO: This is not used in the application
-    
     conn = sqlite3.connect(database)
-    query = f"SELECT * FROM {table_name} ORDER BY id DESC LIMIT {n}"
     cursor = conn.cursor()
-    cursor.execute(query)
-    records = cursor.fetchall()
     
-    return records
+    # Query to get the first and last dates of the last n records
+    query = f"""
+    SELECT MIN(data), MAX(data)
+    FROM (
+        SELECT data
+        FROM {table_name}
+        ORDER BY id DESC
+        LIMIT {n}
+    )
+    """
+    
+    cursor.execute(query)
+    first_date, last_date = cursor.fetchone()
+    
+    conn.close()
+    
+    return first_date, last_date
     
 def records_by_time_csv(database_name, table_name, start_date, end_date, default_path: str = None):
     try:

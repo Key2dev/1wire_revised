@@ -1,5 +1,5 @@
 {
-    "db_path": "C:/Projects/bio_pyth/release_version/1wire_revised/test_database.db",
+    "db_path": "sensor_database.db",
     "export_path": ".\\database_dump.csv",
     "temperature_range": [
         0,
