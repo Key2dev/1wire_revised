@@ -8,7 +8,7 @@ from configuration import Config
 
 
 class Submenu:
-    def __init__(self, parent, title="Submenu"):
+    def __init__(self, parent, title="Filter Data"):
         # Create a new Toplevel window
         self.window = tk.Toplevel(parent)
         self.window.title(title)
@@ -68,15 +68,22 @@ class Submenu:
         self.minute_spinbox.pack(side="left", padx=2)
 
         # Action Buttons
-        button_frame = tk.Frame(main_frame, pady=10)
-        button_frame.pack()
-        
-        # For debugging
-        #tk.Button(button_frame, text="Get Date and Time", command=self.get_date_and_time).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Save filtered", command=self.save_filtered_to_csv).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Generate graph", command=self.generate_graph).pack(side="left", padx=5)
-        tk.Button(button_frame, text="Exit", command=self.close_window).pack(side="left", padx=5)
+        button_frame = tk.LabelFrame(main_frame, text="Actions", pady=10, padx=10)
+        button_frame.pack(fill="x", pady=10)
 
+        # Create two rows of buttons
+        button_row1 = tk.Frame(button_frame)
+        button_row1.pack(fill="x", pady=5)
+        button_row2 = tk.Frame(button_frame)
+        button_row2.pack(fill="x", pady=5)
+
+        # First row of buttons
+        tk.Button(button_row1, text="Save filtered", command=self.save_filtered_to_csv, width=20).pack(side="left", padx=5)
+        tk.Button(button_row1, text="Generate graph from dates", command=self.generate_graph, width=20).pack(side="right", padx=5)
+
+        # Second row of buttons
+        tk.Button(button_row2, text="Graph last n records", command=self.generate_n_graph, width=20).pack(side="left", padx=5)
+        tk.Button(button_row2, text="Exit", command=self.close_window, width=20).pack(side="right", padx=5)
         
         # Update the DateEntry widgets with the valid date range
         self.start_date_entry.set_date(self.min_date.date())
@@ -129,34 +136,45 @@ class Submenu:
         date_tuple = (f"{start_date} {start_time}:00", f"{end_date} {end_time}:00")
         print(date_tuple)
         return date_tuple
+    
+    def generate_graph(self, if_last_n_records=False):
+        if if_last_n_records:
+            n = tk.simpledialog.askinteger("Input", "Enter the number of last records to plot:", parent=self.window, minvalue=1, maxvalue=100000)
+            if n is None:
+                return
+            # Fetch dates from the database
+            start_date, end_date = db_functions.fetch_last_n_records(self.config.get("db_path"), self.config.get("table_name"),n)
+            print(f"Generating graph for last {n} records from {start_date} to {end_date}")
+            InteractiveTemperaturePlot(self.window, start_date, end_date)
+        else:
+             # Fetch dates from UI
+            start_date, end_date = self.get_date_and_time()
+            print(f"Generating graph for dates: {start_date} to {end_date}")
 
-    def generate_graph(self):
-         # Fetch dates from UI
-        start_date, end_date = self.get_date_and_time()
-        print(f"Generating graph for dates: {start_date} to {end_date}")
-
-        # Parse the date strings to datetime objects
-        start_date = self.parse_date(start_date)
-        end_date = self.parse_date(end_date)
+            # Parse the date strings to datetime objects
+            start_date = self.parse_date(start_date)
+            end_date = self.parse_date(end_date)
 
 
-        # Validate the date range
-        # TODO: BUGGY!!
-        if start_date < self.min_date:
-            messagebox.showwarning("Invalid Date Range", f"Start date cannot be earlier than {self.min_date.strftime('%Y-%m-%d %H:%M:%S')}")
-            return
-        if end_date > self.max_date:
-            messagebox.showwarning("Invalid Date Range", f"End date cannot be later than {self.max_date.strftime('%Y-%m-%d %H:%M:%S')}")
-            return
-        if start_date >= end_date:
-            messagebox.showwarning("Invalid Date Range", "Start date must be earlier than end date")
-            return
+            # Validate the date range
+            # TODO: BUGGY!!
+            if start_date < self.min_date:
+                messagebox.showwarning("Invalid Date Range", f"Start date cannot be earlier than {self.min_date.strftime('%Y-%m-%d %H:%M:%S')}")
+                return
+            if end_date > self.max_date:
+                messagebox.showwarning("Invalid Date Range", f"End date cannot be later than {self.max_date.strftime('%Y-%m-%d %H:%M:%S')}")
+                return
+            if start_date >= end_date:
+                messagebox.showwarning("Invalid Date Range", "Start date must be earlier than end date")
+                return
 
-        print(f"Generating graph for dates: {start_date} to {end_date}")
-        
-        # Open the graph window and pass the fetched data
-        InteractiveTemperaturePlot(self.window, start_date, end_date)
+            print(f"Generating graph for dates: {start_date} to {end_date}")
 
+            # Open the graph window and pass the fetched data
+            InteractiveTemperaturePlot(self.window, start_date, end_date)
+
+    def generate_n_graph(self):
+        self.generate_graph(if_last_n_records=True)
 
     def save_filtered_to_csv(self):
         start_date, end_date = self.get_date_and_time()

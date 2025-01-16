@@ -12,12 +12,6 @@ import sys
 # Old reader implementation
 from wire_reader import read_1wire_sensors
 
-# # TODO:
-#   make documentation
-#   polish the ui (use more descriptive variable names, make UI elements more visually appealing)
-#   maybe add functionality to fetch last n records from the database?
-
-
 class WireReaderApp:
     def __init__(self):
         """
@@ -29,7 +23,7 @@ class WireReaderApp:
 
         # Create a new Toplevel window
         self.root = tk.Tk()
-        self.root.title("1Wire Reader")
+        self.root.title("Wire Reader App")
 
         # Load configuration
         self.config = Config(self.root)
@@ -59,9 +53,15 @@ class WireReaderApp:
         self.temp1 = tk.StringVar()
         self.temp2 = tk.StringVar()
         self.temp3 = tk.StringVar()
+        
+        # Create status indicators
+        self.create_status_indicators()
 
         # Create UI elements (labels, buttons, etc.)
         self.create_ui_elements()
+        
+        # Check database connection
+        self.check_db_connection()
 
         # Live Graph
         self.create_live_graph()
@@ -70,35 +70,65 @@ class WireReaderApp:
         self.update_all()
 
     def create_ui_elements(self):
-        # Labels for displaying in the UI
-        self.time_label = tk.Label(self.root, textvariable=self.time_now, font=('Arial', '14'))
-        self.time_label.pack(padx=10, pady=5)
+        # Create a frame for data labels
+        data_frame = tk.Frame(self.root, relief=tk.RAISED, borderwidth=1)
+        data_frame.pack(padx=10, pady=10, fill=tk.X)
 
-        self.t1_label = tk.Label(self.root, textvariable=self.temp1, font=('Arial', '14'))
-        self.t1_label.pack(padx=10, pady=5)
+        # Time label
+        time_frame = tk.Frame(data_frame, relief=tk.SUNKEN, borderwidth=1)
+        time_frame.pack(fill=tk.X, padx=5, pady=5)
+        tk.Label(time_frame, text="Date:", font=('Arial', '12', 'bold')).pack(side=tk.LEFT, padx=5)
+        tk.Label(time_frame, textvariable=self.time_now, font=('Arial', '12')).pack(side=tk.RIGHT, padx=5)
 
-        self.t2_label = tk.Label(self.root, textvariable=self.temp2, font=('Arial', '14'))
-        self.t2_label.pack(padx=10, pady=5)
+        # Temperature labels
+        temp_frame = tk.Frame(data_frame, relief=tk.SUNKEN, borderwidth=1)
+        temp_frame.pack(fill=tk.X, padx=5, pady=5)
 
-        self.t3_label = tk.Label(self.root, textvariable=self.temp3, font=('Arial', '14'))
-        self.t3_label.pack(padx=10, pady=5)
+        for i, temp_var in enumerate([self.temp1, self.temp2, self.temp3], start=1):
+            tk.Label(temp_frame, text=f"Temp {i}:", font=('Arial', '12', 'bold')).pack(side=tk.LEFT, padx=5)
+            tk.Label(temp_frame, textvariable=temp_var, font=('Arial', '12')).pack(side=tk.LEFT, padx=5)
+            
+        # Add average temperature label
+        self.avg_temp = tk.StringVar()
+        avg_temp_frame = tk.Frame(self.root, relief=tk.RAISED, borderwidth=1)
+        avg_temp_frame.pack(fill=tk.X, padx=10, pady=10)
+        tk.Label(avg_temp_frame, text="Average Temperature:", font=('Arial', '14', 'bold')).pack(side=tk.LEFT, padx=5)
+        tk.Label(avg_temp_frame, textvariable=self.avg_temp, font=('Arial', '14', 'bold'), fg='blue').pack(side=tk.LEFT, padx=5)
 
-        # Buttons
-        self.button1 = tk.Button(self.root, text=" Export DB ", font=('Arial', '12'), command=self.export_db)
-        self.button1.pack(padx=10, pady=10)
-
-        self.button3 = tk.Button(self.root, text=" Filter ", font=('Arial', '12'), command=self.open_submenu)
-        self.button3.pack(padx=10, pady=10)
+        # Button frame
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
         
-        self.button4 = tk.Button(self.root, text=" Config ", font=('Arial', '12'), command=self.configuration_menu)
-        self.button4.pack(padx=10, pady=10)
-
-        self.button2 = tk.Button(self.root, text="  Exit  ", font=('Arial', '12'), command=self.exit_click)
-        self.button2.pack(padx=10, pady=10)
-        
+        # Toggle data recording button
         self.toggle_insertion_button = tk.Button(self.root, text="Toggle data recording", font=('Arial', '12'), command=self.toggle_insertion)
         self.toggle_insertion_button.pack(padx=10, pady=10)
+        # Buttons
+        buttons = [
+            ("Export DB", self.export_db),
+            ("Filter", self.open_submenu),
+            ("Config", self.configuration_menu),
+            ("Exit", self.exit_click)
+        ]
+
+        for text, command in buttons:
+            tk.Button(button_frame, text=text, font=('Arial', '12'), command=command, width=20).pack(pady=5)
+
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_click)
+
         
+    def create_status_indicators(self):
+        status_frame = tk.Frame(self.root)
+        status_frame.pack(fill="x", padx=10, pady=5)
+    
+        self.app_status = tk.Label(status_frame, text="App: Running", bg="green", fg="white", padx=5, pady=2)
+        self.app_status.pack(side="left", padx=5)
+    
+        self.db_status = tk.Label(status_frame, text="DB: Connected", bg="green", fg="white", padx=5, pady=2)
+        self.db_status.pack(side="left", padx=5)
+    
+        self.data_status = tk.Label(status_frame, text="Data: Not Recording", bg="red", fg="white", padx=5, pady=2)
+        self.data_status.pack(side="left", padx=5)
+    
     def create_live_graph(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
         self.line, = self.ax.plot([], [], label="Temp1")
@@ -143,10 +173,14 @@ class WireReaderApp:
         
     def update_labels(self):
         # Update label variables with data values
-        self.time_now.set(f"Date: {self.data_time}")
-        self.temp1.set(f"Temp 1: {self.data_temp1}")
-        self.temp2.set(f"Temp 2: {self.data_temp2}")
-        self.temp3.set(f"Temp 3: {self.data_temp3}")
+        self.time_now.set(f"{self.data_time}")
+        self.temp1.set(f"{self.data_temp1}")
+        self.temp2.set(f"{self.data_temp2}")
+        self.temp3.set(f"{self.data_temp3}")
+        
+        # Calculate and update average temperature
+        avg_temp = (self.data_temp1 + self.data_temp2 + self.data_temp3) / 3
+        self.avg_temp.set(f"{avg_temp:.2f} °C")
 
     def update_graph(self):
         # Plot temperature data vs index (just using len() for index)
@@ -182,18 +216,39 @@ class WireReaderApp:
         self.inserting_data = not self.inserting_data
         if self.inserting_data:
             self.toggle_insertion_button.config(text="Stop Recording Data")
+            self.data_status.config(text="Data: Recording", bg="green")
             print("Data insertion started")
         else:
             self.toggle_insertion_button.config(text="Start Recording Data")
+            self.data_status.config(text="Data: Not Recording", bg="red")
             print("Data insertion stopped")
 
+    def check_db_connection(self):
+        try:
+            db_functions.create_db(self.db_path, self.table_name)
+            self.db_status.config(text="DB: Connected", bg="green")
+        except Exception as e:
+            print(f"Database connection error: {e}")
+            self.db_status.config(text="DB: Error", bg="red")
 
     def exit_click(self):
+        if hasattr(self, '_exiting'):
+            return  # Prevent multiple calls to exit_click
+        self._exiting = True
+        
         print("Exit clicked. Closing the application...")
-        self.close_application()
-
+        if hasattr(self, 'update_job'):
+            self.root.after_cancel(self.update_job)
+        
+        # Save configuration before closing
+        self.config.save_config()
+        
+        self.root.quit()
+        self.root.destroy()
+        
     def close_application(self):
         print("Closing application...")
+        self.app_status.config(text="App: Closing", bg="red")
         # Cancel any scheduled after callbacks
         if hasattr(self, 'update_job'):
             self.root.after_cancel(self.update_job)  # Cancel the scheduled update
@@ -219,7 +274,6 @@ class WireReaderApp:
 
         self.root.quit()  # Stop the main loop
         self.root.destroy()  # Free resources
-
 
     
     def configuration_menu(self):
