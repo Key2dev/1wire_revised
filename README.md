@@ -5,6 +5,8 @@
 
 1Wire Revised is a Python-based application developed for monitoring and controlling a bio-reactor at Wrocław University of Environmental and Life Sciences. This software provides real-time temperature monitoring, data logging, and visualization capabilities.
 
+For more info check out WireReaderApp User Manual.
+
 ## Features
 
 - Real-time temperature monitoring from three sensors
@@ -90,7 +92,7 @@ This feature is particularly useful for:
   - Table name
   - Update interval (in miliseconds)
   - Number of graph points to display on live graph in the main window
-  - Debug mode
+  - Debug mode - (!!important info!!) to start the app for the first time in debug mode change `config.json`
 
 ## Development
 

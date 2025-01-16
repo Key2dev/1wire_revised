@@ -8,7 +8,7 @@ from configuration import Config
 
 
 class Submenu:
-    def __init__(self, parent, title="Submenu"):
+    def __init__(self, parent, title="Filter Data"):
         # Create a new Toplevel window
         self.window = tk.Toplevel(parent)
         self.window.title(title)

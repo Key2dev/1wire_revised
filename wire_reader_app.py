@@ -23,7 +23,7 @@ class WireReaderApp:
 
         # Create a new Toplevel window
         self.root = tk.Tk()
-        self.root.title("1Wire Reader")
+        self.root.title("Wire Reader App")
 
         # Load configuration
         self.config = Config(self.root)

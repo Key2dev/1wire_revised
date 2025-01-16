@@ -87,7 +87,7 @@ class InteractiveTemperaturePlot:
         self.control_frame.pack(fill=tk.BOTH, expand=0.6)
 
         # Add Action Buttons
-        self.button1 = tk.Button(self.control_frame, text="Export DB", font=('Arial', '12'), command=self.export_data)
+        self.button1 = tk.Button(self.control_frame, text="Export Data", font=('Arial', '12'), command=self.export_data)
         self.button1.pack(side=tk.LEFT, padx=10, pady=10)
 
         # Add checkbox for showing comments

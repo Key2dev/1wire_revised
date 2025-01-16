@@ -11,7 +11,6 @@ class Config:
     def __init__(self, master):
         self.master = master
         self.config_file = "config.json"
-        self.master.title("Configuration")
         # !!! IMPORTANT: the original_default_config is the DEFAULTS set when the config file does not exist. These are enforced when reseting the config. Do not change these values without a deep understanding of the application's behavior.
         self.original_default_config = {
             "db_path": "sensor_database.db",
