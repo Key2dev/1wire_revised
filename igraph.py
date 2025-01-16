@@ -358,45 +358,6 @@ class InteractiveTemperaturePlot:
         self.canvas.draw_idle()
     
     
-    def refresh_data(self):
-        # Re-fetch data and update plot and table
-        self.dataset = db_functions.fetch_filtered_data(self.db_path, self.table_name, self.start_time, self.end_time)
-        self.timestamps = [datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S') for row in self.dataset]
-        self.temperatures = [row[2] for row in self.dataset]
-        self.temperatures2 = [row[3] for row in self.dataset]
-        self.temperatures3 = [row[4] for row in self.dataset]
-        self.avg_temperatures = [row[5] for row in self.dataset]  # Assuming avg_temp is the 6th column
-        self.comments = [row[6] if len(row) > 6 else '' for row in self.dataset]
-
-        # Clear and repopulate the table
-        for item in self.data_table.get_children():
-            self.data_table.delete(item)
-        for i in range(len(self.timestamps)):
-            self.data_table.insert('', 'end', values=(
-                self.timestamps[i].strftime('%Y-%m-%d %H:%M:%S'),
-                f'{self.temperatures[i]:.2f}',
-                f'{self.temperatures2[i]:.2f}', 
-                f'{self.temperatures3[i]:.2f}',
-                f'{self.avg_temperatures[i]:.2f}',
-                self.comments[i]
-            ))
-
-        # Redraw the plot
-        self.ax.clear()
-        self.init_plot()
-        
-        self.ax.set_ylim(self.temp_range)
-
-        # Recreate the annotation object
-        self.init_annotation()
-
-        # Disconnect previous events
-        if hasattr(self, 'hover_connection'):
-            self.fig.canvas.mpl_disconnect(self.hover_connection)
-
-        # Reconnect hover event
-        self.init_hover_event()
-    
     # Comment checkbox logic
     def toggle_comments(self):
         show_comments = self.show_comments_var.get()
@@ -474,6 +435,7 @@ class InteractiveTemperaturePlot:
                 f'{self.temperatures[i]:.2f}',
                 f'{self.temperatures2[i]:.2f}', 
                 f'{self.temperatures3[i]:.2f}',
+                f'{self.avg_temperatures[i]:.2f}',
                 self.comments[i]
             ))
         
