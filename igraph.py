@@ -224,6 +224,7 @@ class InteractiveTemperaturePlot:
 
     def init_pick_event(self):
         self.fig.canvas.mpl_connect('pick_event', self.onpick)
+        self.fig.canvas.mpl_connect('button_press_event', self.on_background_click)
 
         
     def init_hover_event(self):
@@ -251,6 +252,11 @@ class InteractiveTemperaturePlot:
                 i = ind[0]
                 x = xdata[i]
                 y = ydata[i]
+                
+                # Clear previous selections
+                self.clear_selections()
+                
+                # Highlight the selected point in the graph
                 self.highlight_graph_point(i)
 
                 # Get the timestamp of the selected point
@@ -321,13 +327,35 @@ class InteractiveTemperaturePlot:
             self.annotation.set_visible(False)
             self.fig.canvas.draw_idle()
 
-
-
+    def on_background_click(self, event):
+        if event.inaxes == self.ax:
+            # Check if the click is not on any of the lines
+            if not any(line.contains(event)[0] for line in [self.line1, self.line2, self.line3, self.line_avg]):
+                self.clear_selections()
+                # Clear table selection
+                self.data_table.selection_remove(self.data_table.selection())
+    def clear_selections(self):
+        """Clear all selected points on the graph."""
+        self.selected_scatter1.set_offsets(np.empty((0, 2)))
+        self.selected_scatter2.set_offsets(np.empty((0, 2)))
+        self.selected_scatter3.set_offsets(np.empty((0, 2)))
+        self.selected_scatter_avg.set_offsets(np.empty((0, 2)))
+        self.annotation.set_visible(False)
+        self.canvas.draw_idle()
+                
     def find_nearest_point(self, x, y, line):
         xdata = mdates.date2num(self.timestamps)
         ydata = line.get_ydata()
         distances = np.sqrt((xdata - x)**2 + (ydata - y)**2)
         return np.argmin(distances)
+    
+    def clear_selections(self):
+        """Clear all selected points on the graph."""
+        self.selected_scatter1.set_offsets(np.empty((0, 2)))
+        self.selected_scatter2.set_offsets(np.empty((0, 2)))
+        self.selected_scatter3.set_offsets(np.empty((0, 2)))
+        self.annotation.set_visible(False)
+        self.canvas.draw_idle()
     
     
     def refresh_data(self):
