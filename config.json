@@ -6,7 +6,7 @@
         50
     ],
     "table_name": "temps",
-    "update_interval": 5000,
+    "update_interval": 1000,
     "graph_points": 60,
     "debug_mode": true
 }
