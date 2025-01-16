@@ -53,14 +53,16 @@ The Filter functionality allows users to view and analyze specific ranges of dat
 1. Click the "Filter" button in the main interface to open the submenu.
 2. In the submenu, you can:
    - Select a date range for filtering data
-   - View filtered data in a table format
    - Visualize filtered data in a graph
+   - Save data between specified range
+   - Visualize last n number of records
 
 ### Graph Visualization
 
 - The graph displays temperature data for all three sensors over the selected time range.
 - You can zoom in/out and pan the graph for detailed analysis.
 - Hover over data points to see exact temperature and timestamp values.
+- Use checkboxes for selective display of sensors
 
 ### Data Interaction
 

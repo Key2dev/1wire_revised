@@ -12,12 +12,6 @@ import sys
 # Old reader implementation
 from wire_reader import read_1wire_sensors
 
-# # TODO:
-#   make documentation
-#   polish the ui (use more descriptive variable names, make UI elements more visually appealing)
-#   maybe add functionality to fetch last n records from the database?
-
-
 class WireReaderApp:
     def __init__(self):
         """
@@ -59,9 +53,15 @@ class WireReaderApp:
         self.temp1 = tk.StringVar()
         self.temp2 = tk.StringVar()
         self.temp3 = tk.StringVar()
+        
+        # Create status indicators
+        self.create_status_indicators()
 
         # Create UI elements (labels, buttons, etc.)
         self.create_ui_elements()
+        
+        # Check database connection
+        self.check_db_connection()
 
         # Live Graph
         self.create_live_graph()
@@ -99,6 +99,19 @@ class WireReaderApp:
         self.toggle_insertion_button = tk.Button(self.root, text="Toggle data recording", font=('Arial', '12'), command=self.toggle_insertion)
         self.toggle_insertion_button.pack(padx=10, pady=10)
         
+    def create_status_indicators(self):
+        status_frame = tk.Frame(self.root)
+        status_frame.pack(fill="x", padx=10, pady=5)
+    
+        self.app_status = tk.Label(status_frame, text="App: Running", bg="green", fg="white", padx=5, pady=2)
+        self.app_status.pack(side="left", padx=5)
+    
+        self.db_status = tk.Label(status_frame, text="DB: Connected", bg="green", fg="white", padx=5, pady=2)
+        self.db_status.pack(side="left", padx=5)
+    
+        self.data_status = tk.Label(status_frame, text="Data: Not Recording", bg="red", fg="white", padx=5, pady=2)
+        self.data_status.pack(side="left", padx=5)
+    
     def create_live_graph(self):
         self.fig, self.ax = plt.subplots(figsize=(6, 4))
         self.line, = self.ax.plot([], [], label="Temp1")
@@ -182,11 +195,20 @@ class WireReaderApp:
         self.inserting_data = not self.inserting_data
         if self.inserting_data:
             self.toggle_insertion_button.config(text="Stop Recording Data")
+            self.data_status.config(text="Data: Recording", bg="green")
             print("Data insertion started")
         else:
             self.toggle_insertion_button.config(text="Start Recording Data")
+            self.data_status.config(text="Data: Not Recording", bg="red")
             print("Data insertion stopped")
 
+    def check_db_connection(self):
+        try:
+            db_functions.create_db(self.db_path, self.table_name)
+            self.db_status.config(text="DB: Connected", bg="green")
+        except Exception as e:
+            print(f"Database connection error: {e}")
+            self.db_status.config(text="DB: Error", bg="red")
 
     def exit_click(self):
         print("Exit clicked. Closing the application...")
@@ -194,6 +216,7 @@ class WireReaderApp:
 
     def close_application(self):
         print("Closing application...")
+        self.app_status.config(text="App: Closing", bg="red")
         # Cancel any scheduled after callbacks
         if hasattr(self, 'update_job'):
             self.root.after_cancel(self.update_job)  # Cancel the scheduled update
