@@ -21,7 +21,7 @@
   - numpy
   - pandas
   - matplotlib
-  - requests
+  - tkcalendar
 
 ## Installation
 

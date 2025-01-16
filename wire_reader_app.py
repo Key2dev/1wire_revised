@@ -226,6 +226,7 @@ class WireReaderApp:
         
         self.root.quit()
         self.root.destroy()
+        
     def close_application(self):
         print("Closing application...")
         self.app_status.config(text="App: Closing", bg="red")
