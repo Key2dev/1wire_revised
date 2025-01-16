@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-Wire Reader App is a Python-based application developed for monitoring and controlling a bio-reactor at Wrocław University of Environmental and Life Sciences. This software provides real-time temperature monitoring, data logging, and visualization capabilities for RapsberryPi 1-Wire temperature sensors.
+Wire Reader App is a Python-based application developed for monitoring a bio-reactor at Wrocław University of Environmental and Life Sciences. This software provides real-time temperature monitoring, data logging, and visualization capabilities for RapsberryPi 1-Wire temperature sensors.
 
 For more info check out WireReaderApp User Manual.
 
