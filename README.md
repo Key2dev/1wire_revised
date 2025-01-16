@@ -37,7 +37,7 @@ For more info check out WireReaderApp User Manual.
 ## Usage
 
 1. Run the main application:
-`python main.py`
+`python wire_reader_app.py`
 
 2. The application window will open, displaying real-time temperature readings and a live graph.
 
