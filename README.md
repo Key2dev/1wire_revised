@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-1Wire Revised is a Python-based application developed for monitoring and controlling a bio-reactor at Wrocław University of Environmental and Life Sciences. This software provides real-time temperature monitoring, data logging, and visualization capabilities.
+Wire Reader App is a Python-based application developed for monitoring and controlling a bio-reactor at Wrocław University of Environmental and Life Sciences. This software provides real-time temperature monitoring, data logging, and visualization capabilities for RapsberryPi 1-Wire temperature sensors.
 
 For more info check out WireReaderApp User Manual.
 
