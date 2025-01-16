@@ -19,7 +19,7 @@ class Config:
             "table_name": "temps",
             "update_interval": 5000,  # in milliseconds
             "graph_points": 60,
-            "debug_mode": True # IMPORTANT: Debug mode should be False in a production environment!
+            "debug_mode": True # !!! IMPORTANT: Debug mode should be False in a production environment!
         }
         self.default_config = self.original_default_config.copy()
         self.load_config()
