@@ -99,6 +99,8 @@ class WireReaderApp:
         self.toggle_insertion_button = tk.Button(self.root, text="Toggle data recording", font=('Arial', '12'), command=self.toggle_insertion)
         self.toggle_insertion_button.pack(padx=10, pady=10)
         
+        self.root.protocol("WM_DELETE_WINDOW", self.exit_click)
+        
     def create_status_indicators(self):
         status_frame = tk.Frame(self.root)
         status_frame.pack(fill="x", padx=10, pady=5)
@@ -211,9 +213,19 @@ class WireReaderApp:
             self.db_status.config(text="DB: Error", bg="red")
 
     def exit_click(self):
+        if hasattr(self, '_exiting'):
+            return  # Prevent multiple calls to exit_click
+        self._exiting = True
+        
         print("Exit clicked. Closing the application...")
-        self.close_application()
-
+        if hasattr(self, 'update_job'):
+            self.root.after_cancel(self.update_job)
+        
+        # Save configuration before closing
+        self.config.save_config()
+        
+        self.root.quit()
+        self.root.destroy()
     def close_application(self):
         print("Closing application...")
         self.app_status.config(text="App: Closing", bg="red")
@@ -242,7 +254,6 @@ class WireReaderApp:
 
         self.root.quit()  # Stop the main loop
         self.root.destroy()  # Free resources
-
 
     
     def configuration_menu(self):
