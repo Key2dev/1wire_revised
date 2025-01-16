@@ -1,5 +1,5 @@
 
-# 1Wire Revised
+# Wire Reader App
 
 ## Project Overview
 
